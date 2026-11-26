@@ -112,4 +112,20 @@ export const CONFIG = {
   ALARM_TICKS: 180,
   /** Radius at which a ray hits a food particle. */
   SENSE_FOOD_RADIUS: 6,
+
+  // Fish
+  /** Energy per tick per unit of size, just for being alive. */
+  BASE_COST: 0.0008,
+  /** Energy per tick per unit of size and squared speed. */
+  MOVE_COST: 0.0002,
+  /** Energy per tick per hidden node. */
+  BRAIN_NODE_COST: 0.0005,
+  /** Energy per tick per enabled connection. */
+  BRAIN_CONN_COST: 0.00004,
+  /** Max heading change per tick at full turn output, radians. */
+  TURN_RATE: 0.15,
+  /** Spent energy a fish holds until it is excreted as waste. */
+  EXCRETE_AMOUNT: 2,
+  /** Age in ticks at which a fish can mate. */
+  MATURITY_TICKS: 600,
 } as const;
