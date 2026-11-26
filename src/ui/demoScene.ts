@@ -1,4 +1,4 @@
-// A hand-made static scene for previewing the visuals before the simulation exists.
+// A random static scene to preview the visuals before the simulation exists.
 import { CONFIG } from '../sim/config';
 import { Rng } from '../sim/rng';
 import { PATTERNS, type ColorGenes } from '../sim/traits';

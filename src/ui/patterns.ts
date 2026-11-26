@@ -5,7 +5,7 @@ export interface Mark {
   /** Center in body coordinates (x along the body, head at +x). */
   x: number;
   y: number;
-  /** Half-width / half-height (spot: radius in w). */
+  /** Half-width and half-height. A spot uses w as its radius. */
   w: number;
   h: number;
 }
