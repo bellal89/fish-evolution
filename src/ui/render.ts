@@ -1,6 +1,6 @@
 import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
-import type { FishView, PredatorSnap, Rock, SceneView } from '../protocol';
+import type { FishView, PredatorSnap, Rock, SceneView, SelectedView } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
 
@@ -18,7 +18,7 @@ function fishPatternColor(c: ColorGenes): string {
   return `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
 }
 
-export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time): void {
+export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time, selected: SelectedView | null = null): void {
   const { tankW: W, tankH: H } = scene;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -37,6 +37,7 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, vi
   drawParticles(ctx, scene);
   for (const f of scene.fish) drawFish(ctx, f, t);
   for (const p of scene.predators) drawPredator(ctx, p, t);
+  if (selected) drawSelection(ctx, scene, selected);
 
   ctx.restore();
 }
@@ -284,6 +285,10 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
   g.addColorStop(1, '#b9c3bd');
   ctx.fillStyle = g;
   ctx.fill();
+  if (p.state === 'chase') {
+    ctx.fillStyle = 'rgba(220,40,30,0.4)';
+    ctx.fill();
+  }
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
@@ -317,5 +322,30 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
   ctx.arc(hl * 0.65, -hh * 0.3, hh * 0.08, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.restore();
+}
+
+/** Vision rays (same angle formula as the senses) and a ring around the selected fish. */
+function drawSelection(ctx: CanvasRenderingContext2D, scene: SceneView, sel: SelectedView): void {
+  const f = scene.fish.find(x => x.id === sel.fish.id);
+  if (!f) return;
+  const { viewAngle, viewRange } = sel.fish.traits;
+  const n = CONFIG.RAY_COUNT;
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < n; i++) {
+    const a = f.heading + viewAngle * (i / (n - 1) - 0.5);
+    const hit = Math.max(sel.fish.inputs[3 * i] ?? 0, sel.fish.inputs[3 * i + 1] ?? 0, sel.fish.inputs[3 * i + 2] ?? 0);
+    ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.7 * Math.min(1, hit)})`;
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(f.x + Math.cos(a) * viewRange, f.y + Math.sin(a) * viewRange);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(f.x, f.y, f.size * FISH_DRAW_SCALE * 2.2, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }
