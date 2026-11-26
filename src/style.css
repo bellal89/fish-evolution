@@ -1,0 +1,5 @@
+html, body { margin: 0; height: 100%; background: #0b1820; overflow: hidden; font-family: system-ui, sans-serif; }
+#tank { display: block; width: 100vw; height: 100vh; }
+#bar { position: fixed; top: 10px; left: 10px; display: flex; gap: 6px; }
+#bar button { background: rgba(10,25,35,0.75); color: #dfe; border: 1px solid #3a5868; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+#bar button:hover { background: rgba(30,60,75,0.9); }
