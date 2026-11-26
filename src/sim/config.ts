@@ -91,4 +91,25 @@ export const CONFIG = {
   WASTE_DISSOLVE_RATE: 0.002,
   /** Ticks a waste particle lies on the bottom before dissolving fully. */
   WASTE_BOTTOM_TICKS: 120,
+
+  // Senses
+  /** Vision rays per fish, spread evenly across the view angle. */
+  RAY_COUNT: 5,
+  /** Radius of the lateral line. */
+  LATERAL_RADIUS: 120,
+  /** Movers slower than this are not felt by the lateral line. */
+  LATERAL_MIN_SPEED: 1.5,
+  /** Half-width of the front and back lateral quadrants, radians. */
+  LATERAL_FRONT_HALF_ANGLE: Math.PI / 4,
+  SMELL_RADIUS: 250,
+  /** Smell sample points sit this far to the left and right of the fish. */
+  SMELL_SIDE_OFFSET: 8,
+  /** Distances below this are clamped when computing smell (avoids 1/0). */
+  SMELL_MIN_DIST: 5,
+  /** Keeps the smell gradient finite when there is no smell. */
+  SMELL_EPS: 1e-6,
+  ALARM_RADIUS: 200,
+  ALARM_TICKS: 180,
+  /** Radius at which a ray hits a food particle. */
+  SENSE_FOOD_RADIUS: 6,
 } as const;
