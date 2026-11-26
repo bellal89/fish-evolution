@@ -45,7 +45,7 @@ export const CONFIG = {
   /** Chance that a pattern gene switches to a random pattern. */
   P_PATTERN_MUT: 0.03,
   /** A chooser with choosiness 1 demands this attraction. */
-  CHOOSY_MAX: 0.8,
+  CHOOSY_MAX: 0.5,
   /** Visibility floor: even perfect camouflage is not invisible. */
   MIN_VISIBILITY: 0.25,
   /** Visibility weights: hue contrast and brightness contrast with the background. */
@@ -161,4 +161,21 @@ export const CONFIG = {
   HATCH_TICKS: 300,
   /** Generations of descendants an ancestor's living count covers. */
   LINEAGE_DEPTH: 10,
+
+  // World
+  INITIAL_FISH: 60,
+  /** Energy each initial fish starts with. */
+  INITIAL_FISH_ENERGY: 100,
+  /** All nutrients in the tank; the initial fertilizer is what the fish and algae do not hold. */
+  TOTAL_NUTRIENTS: 20000,
+  /** Most algae biomass a fish eats per tick from one cell. */
+  BITE: 0.5,
+  /** A fish touches food within its size plus this. */
+  EAT_REACH: 4,
+  /** Ticks a predator stays sated after eating a fish. */
+  PRED_SATIETY_TICKS: 1800,
+  BG_WATER_BRIGHTNESS: 0.5,
+  BG_SAND_BRIGHTNESS: 0.7,
+  /** Cell size of the per-tick spatial grids. */
+  GRID_CELL: 200,
 } as const;
