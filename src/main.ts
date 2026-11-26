@@ -6,7 +6,7 @@ import { fitView } from './ui/view';
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <canvas id="tank"></canvas>
-  <div id="bar"><button id="reroll">Другая сцена</button></div>
+  <div id="bar"><button id="reroll">New scene</button></div>
 `;
 
 const canvas = document.getElementById('tank') as HTMLCanvasElement;
