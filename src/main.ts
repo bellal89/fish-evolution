@@ -1,22 +1,38 @@
 import './style.css';
 import type { FromWorker, Snapshot, ToWorker } from './protocol';
+import { mountCharts } from './ui/charts';
 import { mountControls } from './ui/controls';
+import { mountInspector } from './ui/inspector';
 import { drawAquarium } from './ui/render';
+import { CONFIG } from './sim/config';
 import { fitView, screenToWorld } from './ui/view';
 
 const app = document.getElementById('app')!;
-app.innerHTML = `<canvas id="tank"></canvas><div id="bar"></div>`;
+app.innerHTML = `
+  <canvas id="tank"></canvas><div id="bar"></div>
+  <aside id="side"><div id="inspector"></div><div id="charts"></div></aside>`;
 const canvas = document.getElementById('tank') as HTMLCanvasElement;
 const ctx = canvas.getContext('2d')!;
 
 const worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
-const send = (m: ToWorker): void => worker.postMessage(m);
+const inspector = mountInspector(document.getElementById('inspector')!);
+const charts = mountCharts(document.getElementById('charts')!);
+const send = (m: ToWorker): void => {
+  if (m.type === 'select') inspector.setWanted(m.id);
+  if (m.type === 'reset') inspector.setWanted(null);
+  worker.postMessage(m);
+};
 const controls = mountControls(document.getElementById('bar')!, send);
 
 let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
   snap = e.data.snap;
   controls.update(snap);
+  if (snap.stats) {
+    charts.update(snap.stats);
+    inspector.setHistory(snap.stats);
+  }
+  inspector.update(snap);
 };
 
 function resize(): void {
@@ -33,7 +49,14 @@ canvas.addEventListener('click', e => {
   const view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
   const r = canvas.getBoundingClientRect();
   const p = screenToWorld(view, (e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
-  send({ type: 'selectAt', x: p.x, y: p.y });
+  // Same pick rule as the worker, done here so the UI knows which id it asked for.
+  let id: number | null = null;
+  let best: number = CONFIG.PICK_RADIUS;
+  for (const f of snap.fish) {
+    const d = Math.hypot(f.x - p.x, f.y - p.y);
+    if (d <= best) { id = f.id; best = d; }
+  }
+  send({ type: 'select', id });
 });
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') send({ type: 'select', id: null });
