@@ -1,6 +1,6 @@
 import type { FromWorker, ToWorker } from '../protocol';
 import { CONFIG } from '../sim/config';
-import { fishAt, makeSnapshot } from '../sim/snapshot';
+import { makeSnapshot } from '../sim/snapshot';
 import { Stats } from '../sim/stats';
 import { World } from '../sim/world';
 
@@ -31,7 +31,6 @@ export class SimLoop {
     switch (msg.type) {
       case 'speed': this.speed = msg.speed; break;
       case 'select': this.selectedId = msg.id; break;
-      case 'selectAt': this.selectedId = fishAt(this.world, msg.x, msg.y); break;
       case 'reset':
         this.world = new World(msg.seed ?? this.seed);
         this.stats = new Stats();

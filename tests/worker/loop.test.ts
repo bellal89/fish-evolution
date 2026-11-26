@@ -117,12 +117,12 @@ test('reset clears world and stats, keeps speed, clears selection', () => {
   expect(snaps().at(-1)!.tick).toBe(0);
 });
 
-test('select and selectAt choose a fish', () => {
+test('select chooses a fish', () => {
   const { loop, snaps } = setup();
   loop.handle({ type: 'speed', speed: 0 });
   loop.frame(0);
   const f = snaps().at(-1)!.fish[0];
-  loop.handle({ type: 'selectAt', x: f.x, y: f.y });
+  loop.handle({ type: 'select', id: f.id });
   loop.frame(1000);
   expect(snaps().at(-1)!.selected!.fish.id).toBe(f.id);
   loop.handle({ type: 'select', id: null });
@@ -131,9 +131,6 @@ test('select and selectAt choose a fish', () => {
   loop.handle({ type: 'select', id: f.id });
   loop.frame(3000);
   expect(snaps().at(-1)!.selected!.fish.id).toBe(f.id);
-  loop.handle({ type: 'selectAt', x: -1000, y: -1000 });
-  loop.frame(4000);
-  expect(snaps().at(-1)!.selected).toBeNull();
 });
 
 test('same seed gives the same world', () => {

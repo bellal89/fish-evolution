@@ -2,9 +2,9 @@ import './style.css';
 import type { FromWorker, Snapshot, ToWorker } from './protocol';
 import { mountCharts } from './ui/charts';
 import { mountControls } from './ui/controls';
+import { pickFish } from './ui/pick';
 import { mountInspector } from './ui/inspector';
 import { drawAquarium } from './ui/render';
-import { CONFIG } from './sim/config';
 import { fitView, screenToWorld } from './ui/view';
 
 const app = document.getElementById('app')!;
@@ -49,14 +49,7 @@ canvas.addEventListener('click', e => {
   const view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
   const r = canvas.getBoundingClientRect();
   const p = screenToWorld(view, (e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
-  // Same pick rule as the worker, done here so the UI knows which id it asked for.
-  let id: number | null = null;
-  let best: number = CONFIG.PICK_RADIUS;
-  for (const f of snap.fish) {
-    const d = Math.hypot(f.x - p.x, f.y - p.y);
-    if (d <= best) { id = f.id; best = d; }
-  }
-  send({ type: 'select', id });
+  send({ type: 'select', id: pickFish(snap.fish, p.x, p.y) });
 });
 window.addEventListener('keydown', e => {
   if (e.key === 'Escape') send({ type: 'select', id: null });

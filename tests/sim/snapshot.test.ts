@@ -1,5 +1,5 @@
 import { expect, test } from 'vitest';
-import { fishAt, makeSnapshot } from '../../src/sim/snapshot';
+import { makeSnapshot } from '../../src/sim/snapshot';
 import { Stats } from '../../src/sim/stats';
 import { World } from '../../src/sim/world';
 
@@ -32,11 +32,4 @@ test('snapshot copies do not alias the live world', () => {
   const x = snap.fish[0].x;
   w.fish[0].x += 100;
   expect(snap.fish[0].x).toBe(x);
-});
-
-test('fishAt picks the nearest fish within the radius', () => {
-  const { w } = setup();
-  const f = w.fish[0];
-  expect(fishAt(w, f.x + 3, f.y)).toBe(f.id);
-  expect(fishAt(w, -1000, -1000)).toBeNull();
 });

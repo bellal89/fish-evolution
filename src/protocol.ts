@@ -69,7 +69,6 @@ export interface Snapshot extends SceneView {
 export type ToWorker =
   | { type: 'speed'; speed: 0 | 1 | 10 | 50 | 'max' }
   | { type: 'select'; id: number | null }
-  | { type: 'selectAt'; x: number; y: number }
   | { type: 'reset'; seed?: number };
 
 export type FromWorker = { type: 'snapshot'; snap: Snapshot };

@@ -40,14 +40,3 @@ export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, 
     ...(includeStats ? { stats: stats.history.map(p => ({ ...p })) } : {}),
   };
 }
-
-/** Id of the nearest fish within the pick radius, or null. */
-export function fishAt(w: World, x: number, y: number): number | null {
-  let best: number | null = null;
-  let bestD: number = CONFIG.PICK_RADIUS;
-  for (const f of w.fish) {
-    const d = Math.hypot(f.x - x, f.y - y);
-    if (d <= bestD) { best = f.id; bestD = d; }
-  }
-  return best;
-}
