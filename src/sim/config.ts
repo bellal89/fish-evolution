@@ -186,4 +186,12 @@ export const CONFIG = {
   STATS_MAX: 600,
   /** Radius in px for picking a fish with a click. */
   PICK_RADIUS: 20,
+
+  // Worker loop
+  /** Wall-time budget per frame, ms. */
+  WORKER_BUDGET_MS: 25,
+  /** Minimum wall time between posted snapshots, ms. */
+  SNAPSHOT_INTERVAL_MS: 33,
+  /** Delay between worker frames, ms. */
+  WORKER_TIMER_MS: 16,
 } as const;
