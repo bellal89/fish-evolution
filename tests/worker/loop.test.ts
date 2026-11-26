@@ -48,16 +48,18 @@ test('fractional remainder carries over between frames', () => {
 
 test('numeric speed never spends more than the budget and drops the debt', () => {
   let t = 0;
-  const { loop, snaps } = setup(() => (t += 5)); // every clock read costs 5 ms
+  let cost = 5; // every clock read costs this many ms
+  const { loop, snaps } = setup(() => (t += cost));
   loop.handle({ type: 'speed', speed: 50 });
   loop.frame(0);
-  loop.frame(10_000); // enormous debt
+  loop.frame(10_000); // enormous debt (~30000 ticks)
   const ticks = snaps().at(-1)!.tick;
   expect(ticks).toBeGreaterThan(0);
   expect(ticks).toBeLessThanOrEqual(CONFIG.WORKER_BUDGET_MS / 5 + 1);
-  loop.frame(10_000 + FRAME_MS);
-  // debt was dropped: next frame owes only ~50 ticks, not thousands
-  expect(snaps().at(-1)!.tick - ticks).toBeLessThanOrEqual(50);
+  cost = 0; // budget no longer limits: only the owed debt does
+  loop.frame(10_000 + 6 * FRAME_MS);
+  // 6 normal frames at speed 50 owe ~300 ticks, not the old debt
+  expect(Math.abs(snaps().at(-1)!.tick - ticks - 300)).toBeLessThanOrEqual(1);
 });
 
 test("'max' steps until the wall-time budget is spent", () => {
