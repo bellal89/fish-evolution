@@ -38,7 +38,7 @@ export class FoodSystem {
       this.rocks.push(rock);
       const spread = rock.rx * CONFIG.ALGAE_ROCK_SPREAD;
       for (let i = 0; i < CONFIG.ALGAE_PER_ROCK; i++) {
-        this.algae.push({ x: rock.x + rng.range(-spread, spread), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
+        this.algae.push({ x: clamp(rock.x + rng.range(-spread, spread), 0, w), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
       }
     }
     for (let i = 0; i < CONFIG.ALGAE_CELLS - onRocks; i++) {

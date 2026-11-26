@@ -26,6 +26,10 @@ test('exposes the generated rocks, inside the tank', () => {
     expect(r.x).toBeLessThan(W);
     expect(r.y).toBe(H - CONFIG.SAND_H);
   }
+  for (const a of food.algae) {
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(a.x).toBeLessThanOrEqual(CONFIG.TANK_W);
+  }
 });
 
 test('food step conserves field+food total', () => {
