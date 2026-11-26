@@ -19,7 +19,7 @@ export function mutateGenome(g: Genome, rng: Rng, t: InnovationTracker): Genome 
   }
   if (rng.chance(CONFIG.P_ADD_CONN)) addConnection(child, rng, t);
   if (rng.chance(CONFIG.P_ADD_NODE)) addNode(child, rng, t);
-  if (rng.chance(CONFIG.P_TOGGLE) && child.conns.length > 0) {
+  if (rng.chance(CONFIG.P_TOGGLE)) {
     const c = rng.pick(child.conns);
     c.enabled = !c.enabled;
   }
@@ -27,8 +27,7 @@ export function mutateGenome(g: Genome, rng: Rng, t: InnovationTracker): Genome 
 }
 
 /**
- * Adds one random new connection, in place. Sources are input, bias or hidden
- * nodes; targets are hidden or output nodes. Skips pairs that already exist
+ * Adds one random new connection, in place. Skips pairs that already exist
  * (enabled or not) and pairs that would close a cycle. Disabled connections
  * count for the cycle check too, so re-enabling one later stays acyclic.
  */
