@@ -21,11 +21,18 @@ test('nutrients conserved every tick', () => {
 test('long run stays finite and conserved', () => {
   const w = new World(3);
   const t0 = w.totalNutrients();
-  for (let i = 0; i < 50_000 && !w.extinct; i++) w.step();
-  for (const f of w.fish) {
-    expect(Number.isFinite(f.x) && Number.isFinite(f.y) && Number.isFinite(f.energy)).toBe(true);
-    expect([...f.lastOutputs].every(Number.isFinite)).toBe(true);
+  let fishChecks = 0;
+  for (let i = 0; i < 50_000 && !w.extinct; i++) {
+    w.step();
+    if (w.tick % 500 !== 0) continue;
+    for (const f of w.fish) {
+      expect(Number.isFinite(f.x) && Number.isFinite(f.y) && Number.isFinite(f.energy)).toBe(true);
+      expect([...f.lastOutputs].every(Number.isFinite)).toBe(true);
+      fishChecks++;
+    }
+    expect(drift(w, t0)).toBeLessThan(1e-6);
   }
+  expect(fishChecks).toBeGreaterThan(0);
   expect(drift(w, t0)).toBeLessThan(1e-6);
 }, 120_000);
 
