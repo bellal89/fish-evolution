@@ -1,0 +1,111 @@
+import { CONFIG } from './config';
+import { clamp } from './geom';
+import type { FertilizerField } from './nutrients';
+import type { Rng } from './rng';
+
+export interface AlgaeCell { x: number; y: number; biomass: number }
+export interface Plankton { id: number; x: number; y: number; vx: number; vy: number; amount: number }
+export interface Waste { x: number; y: number; vy: number; amount: number; bottomTicks: number }
+
+/** Algae, plankton and waste: everything that holds nutrients outside the fertilizer field. */
+export class FoodSystem {
+  algae: AlgaeCell[] = [];
+  plankton: Plankton[] = [];
+  waste: Waste[] = [];
+  private nextId = 1;
+  private readonly floorY: number;
+
+  constructor(rng: Rng, private readonly w: number, h: number) {
+    this.floorY = h - CONFIG.SAND_H;
+    const onRocks = CONFIG.ROCK_COUNT * CONFIG.ALGAE_PER_ROCK;
+    for (let r = 0; r < CONFIG.ROCK_COUNT; r++) {
+      const rockX = rng.range(0.1 * w, 0.9 * w);
+      const top = this.floorY - rng.range(CONFIG.ROCK_MIN_H, CONFIG.ROCK_MAX_H);
+      for (let i = 0; i < CONFIG.ALGAE_PER_ROCK; i++) {
+        this.algae.push({ x: clamp(rockX + rng.range(-30, 30), 0, w), y: top, biomass: CONFIG.ALGAE_INIT });
+      }
+    }
+    for (let i = 0; i < CONFIG.ALGAE_CELLS - onRocks; i++) {
+      this.algae.push({ x: rng.range(0, w), y: this.floorY, biomass: CONFIG.ALGAE_INIT });
+    }
+  }
+
+  step(field: FertilizerField, rng: Rng): void {
+    this.growAlgae(field);
+    this.spawnPlankton(field, rng);
+    this.movePlankton(rng);
+    this.moveWaste(field);
+  }
+
+  private growAlgae(field: FertilizerField): void {
+    for (const a of this.algae) {
+      const want = Math.min(field.at(a.x, a.y) * CONFIG.ALGAE_GROWTH, CONFIG.ALGAE_MAX - a.biomass);
+      if (want > 0) a.biomass += field.take(a.x, a.y, want);
+    }
+  }
+
+  private spawnPlankton(field: FertilizerField, rng: Rng): void {
+    for (let i = 0; i < CONFIG.PLANKTON_TRIES; i++) {
+      if (this.plankton.length >= CONFIG.PLANKTON_MAX) return;
+      const x = rng.range(0, this.w), y = rng.range(0, this.floorY);
+      if (field.at(x, y) <= CONFIG.PLANKTON_FERT_MIN) continue;
+      const amount = field.take(x, y, CONFIG.PLANKTON_AMOUNT);
+      this.plankton.push({ id: this.nextId++, x, y, vx: 0, vy: 0, amount });
+    }
+  }
+
+  private movePlankton(rng: Rng): void {
+    for (const p of this.plankton) {
+      p.vx = (p.vx + rng.normal() * CONFIG.PLANKTON_DRIFT) * CONFIG.PLANKTON_DAMPING;
+      p.vy = (p.vy + rng.normal() * CONFIG.PLANKTON_DRIFT) * CONFIG.PLANKTON_DAMPING;
+      p.x += p.vx;
+      p.y += p.vy;
+      if (p.x < 0 || p.x > this.w) { p.x = clamp(p.x, 0, this.w); p.vx = -p.vx; }
+      if (p.y < 0 || p.y > this.floorY) { p.y = clamp(p.y, 0, this.floorY); p.vy = -p.vy; }
+    }
+  }
+
+  private moveWaste(field: FertilizerField): void {
+    const alive: Waste[] = [];
+    for (const wst of this.waste) {
+      const dissolved = wst.amount * CONFIG.WASTE_DISSOLVE_RATE;
+      field.add(wst.x, wst.y, dissolved);
+      wst.amount -= dissolved;
+      if (wst.y < this.floorY) {
+        wst.y = Math.min(wst.y + wst.vy, this.floorY);
+      } else if (++wst.bottomTicks >= CONFIG.WASTE_BOTTOM_TICKS) {
+        field.add(wst.x, wst.y, wst.amount);
+        continue;
+      }
+      alive.push(wst);
+    }
+    this.waste = alive;
+  }
+
+  /** Removes up to `amt` biomass from the cell; returns what was eaten. */
+  eatAlgae(cell: AlgaeCell, amt: number): number {
+    const eaten = Math.min(amt, cell.biomass);
+    cell.biomass -= eaten;
+    return eaten;
+  }
+
+  /** Removes the plankton and returns its nutrient amount (0 if already removed). */
+  removePlankton(p: Plankton): number {
+    const i = this.plankton.indexOf(p);
+    if (i < 0) return 0;
+    this.plankton.splice(i, 1);
+    return p.amount;
+  }
+
+  addWaste(x: number, y: number, amt: number): void {
+    this.waste.push({ x, y, vy: CONFIG.WASTE_SINK_SPEED, amount: amt, bottomTicks: 0 });
+  }
+
+  total(): number {
+    let s = 0;
+    for (const a of this.algae) s += a.biomass;
+    for (const p of this.plankton) s += p.amount;
+    for (const w of this.waste) s += w.amount;
+    return s;
+  }
+}

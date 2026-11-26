@@ -23,4 +23,34 @@ export const CONFIG = {
   P_TOGGLE: 0.02,
   /** Crossover: a gene disabled in either parent stays disabled with this chance. */
   P_INHERIT_DISABLED: 0.75,
+
+  // Nutrients and food
+  /** Fertilizer field resolution. */
+  FIELD_COLS: 64,
+  FIELD_ROWS: 36,
+  /** Fraction of the neighbour difference exchanged per tick by diffusion. */
+  FERT_DIFFUSION: 0.1,
+  ALGAE_CELLS: 80,
+  ROCK_COUNT: 4,
+  /** Algae cells that sit on each rock top (the rest lie along the bottom). */
+  ALGAE_PER_ROCK: 5,
+  ROCK_MIN_H: 60,
+  ROCK_MAX_H: 160,
+  ALGAE_INIT: 1,
+  ALGAE_MAX: 10,
+  /** Fraction of local fertilizer converted to algae biomass per tick. */
+  ALGAE_GROWTH: 0.002,
+  PLANKTON_TRIES: 3,
+  /** Local fertilizer needed before plankton can spawn. */
+  PLANKTON_FERT_MIN: 0.5,
+  PLANKTON_AMOUNT: 1,
+  PLANKTON_MAX: 150,
+  /** Std dev of the random velocity kick per tick. */
+  PLANKTON_DRIFT: 0.02,
+  PLANKTON_DAMPING: 0.98,
+  WASTE_SINK_SPEED: 0.5,
+  /** Fraction of a waste particle that dissolves into the field per tick. */
+  WASTE_DISSOLVE_RATE: 0.002,
+  /** Ticks a waste particle lies on the bottom before dissolving fully. */
+  WASTE_BOTTOM_TICKS: 120,
 } as const;
