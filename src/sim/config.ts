@@ -178,4 +178,12 @@ export const CONFIG = {
   BG_SAND_BRIGHTNESS: 0.7,
   /** Cell size of the per-tick spatial grids. */
   GRID_CELL: 200,
+
+  // Stats
+  /** Ticks between stats samples. */
+  STATS_EVERY: 300,
+  /** History length at which adjacent points are merged. */
+  STATS_MAX: 600,
+  /** Radius in px for picking a fish with a click. */
+  PICK_RADIUS: 20,
 } as const;
