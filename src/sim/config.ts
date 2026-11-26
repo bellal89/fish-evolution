@@ -128,4 +128,37 @@ export const CONFIG = {
   EXCRETE_AMOUNT: 2,
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
+
+  // Predator, reproduction, lineage
+  PRED_SIZE: 30,
+  /** Cruise speed while patrolling, per tick. */
+  PRED_PATROL_SPEED: 1.2,
+  /** Chase speed, per tick; above the fastest fish. */
+  PRED_DASH_SPEED: 5,
+  /** Max heading change per tick at full turn, radians. */
+  PRED_TURN_RATE: 0.06,
+  /** Field of view, radians. */
+  PRED_VIEW_ANGLE: 1.6,
+  /** Spotting range for a fully visible fish. */
+  PRED_VIEW_RANGE: 350,
+  /** While sated the predator only notices fish this close. */
+  PRED_LAZY_RANGE: 80,
+  PRED_STAMINA_MAX: 300,
+  /** Stamina lost per chasing tick. */
+  PRED_STAMINA_DRAIN: 1,
+  /** Stamina gained per resting or patrolling tick. */
+  PRED_STAMINA_REFILL: 0.5,
+  /** Max random turn per tick while wandering, as a share of full turn. */
+  PRED_WANDER_TURN: 0.3,
+  /** An egg this close to the predator's edge is steered toward. */
+  PRED_EGG_REACH: 15,
+  /** Least energy an egg should hold; a clutch is sized by this. */
+  EGG_MIN_ENERGY: 10,
+  MAX_CLUTCH: 4,
+  /** Ticks after mating before a fish can mate again. */
+  MATE_COOLDOWN: 600,
+  /** Ticks from laying to hatching. */
+  HATCH_TICKS: 300,
+  /** Generations of descendants an ancestor's living count covers. */
+  LINEAGE_DEPTH: 10,
 } as const;
