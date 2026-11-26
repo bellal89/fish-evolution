@@ -36,7 +36,6 @@ export interface FoodView {
 }
 
 export interface SceneView {
-  tick: number;
   tankW: number;
   tankH: number;
   rocks: Rock[];

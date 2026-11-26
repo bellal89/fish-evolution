@@ -21,7 +21,7 @@ function hash01(id: number, k: number): number {
 
 /** Geometry of a fish's pattern inside a body of half-length hl and half-height hh. */
 export function patternMarks(c: ColorGenes, id: number, hl: number, hh: number): Mark[] {
-  const n = Math.max(1, Math.round(c.patternCount));
+  const n = c.patternCount;
   const marks: Mark[] = [];
   if (c.pattern === 'stripes') {
     const from = -0.6 * hl, to = 0.45 * hl;

@@ -1,5 +1,3 @@
-// Genes for body, color and mate preference. Logic is added in Task 4.
-
 export type Sex = 'M' | 'F';
 
 export type Pattern = 'solid' | 'stripes' | 'spots' | 'bands';

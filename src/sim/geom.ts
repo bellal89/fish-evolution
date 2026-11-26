@@ -24,8 +24,6 @@ export function rayCircle(
   const r2 = r * r;
   if (d2 > r2) return null;
   const half = Math.sqrt(r2 - d2);
-  const t0 = proj - half;
-  const t1 = proj + half;
-  if (t1 < 0) return null;
-  return t0 >= 0 ? t0 : 0;
+  if (proj + half < 0) return null;
+  return Math.max(proj - half, 0);
 }

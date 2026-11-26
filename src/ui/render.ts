@@ -10,11 +10,11 @@ type Time = number;
 /** Fish are drawn a bit larger than their collision size so patterns are readable. */
 const FISH_DRAW_SCALE = 1.35;
 
-export function fishBodyColor(c: ColorGenes): string {
+function fishBodyColor(c: ColorGenes): string {
   return `hsl(${c.hue * 360}, ${20 + 70 * c.brightness}%, ${32 + 26 * c.brightness}%)`;
 }
 
-export function fishPatternColor(c: ColorGenes): string {
+function fishPatternColor(c: ColorGenes): string {
   return `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
 }
 
@@ -156,13 +156,14 @@ function enterFrame(ctx: CanvasRenderingContext2D, x: number, y: number, heading
   if (Math.cos(heading) < 0) ctx.scale(1, -1);
 }
 
-export function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): void {
+function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): void {
   const c = f.color;
   const s = f.size * FISH_DRAW_SCALE;
   const hl = s * 1.3;
   const hh = s * 0.6;
   const body = fishBodyColor(c);
   const accent = c.pattern === 'solid' ? body : fishPatternColor(c);
+  const fin = f.sex === 'M' ? accent : body;
   const wiggle = Math.sin(t * 9 + f.id) * 0.25;
 
   ctx.save();
@@ -172,7 +173,7 @@ export function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): v
   ctx.save();
   ctx.translate(-hl, 0);
   ctx.rotate(wiggle);
-  ctx.fillStyle = f.sex === 'M' ? accent : body;
+  ctx.fillStyle = fin;
   ctx.globalAlpha = f.sex === 'M' ? 0.9 : 1;
   ctx.beginPath();
   if (f.sex === 'M') {
@@ -193,7 +194,7 @@ export function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): v
   ctx.restore();
 
   // Dorsal fin.
-  ctx.fillStyle = f.sex === 'M' ? accent : body;
+  ctx.fillStyle = fin;
   ctx.beginPath();
   ctx.moveTo(hl * 0.25, -hh * 0.9);
   ctx.quadraticCurveTo(-hl * 0.2, -hh * (f.sex === 'M' ? 2.0 : 1.5), -hl * 0.6, -hh * 0.75);
@@ -207,7 +208,7 @@ export function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): v
   ctx.save();
   bodyPath(ctx, hl, hh);
   ctx.clip();
-  ctx.fillStyle = fishPatternColor(c);
+  ctx.fillStyle = accent;
   for (const m of patternMarks(c, f.id, hl, hh)) {
     ctx.beginPath();
     if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
@@ -241,7 +242,7 @@ export function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): v
   ctx.restore();
 }
 
-export function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): void {
+function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): void {
   const hl = p.size * 1.5;
   const hh = p.size * 0.55;
   const wiggle = Math.sin(t * (p.state === 'chase' ? 14 : 5)) * 0.2;

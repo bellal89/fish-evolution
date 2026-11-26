@@ -58,7 +58,6 @@ export function makeDemoScene(seed: number): SceneView {
   }
 
   return {
-    tick: 0,
     tankW: W,
     tankH: H,
     rocks,

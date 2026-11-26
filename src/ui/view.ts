@@ -13,7 +13,3 @@ export function fitView(canvasW: number, canvasH: number, tankW: number, tankH: 
     offsetY: (canvasH - tankH * scale) / 2,
   };
 }
-
-export function screenToWorld(v: View, px: number, py: number): { x: number; y: number } {
-  return { x: (px - v.offsetX) / v.scale, y: (py - v.offsetY) / v.scale };
-}
