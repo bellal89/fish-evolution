@@ -3,9 +3,9 @@ import type { Rng } from '../sim/rng';
 import type { ConnGene, Genome } from './genome';
 
 /**
- * NEAT crossover. Matching genes (same innovation) are taken from either
- * parent at random; disjoint and excess genes come from `fitter` only, so the
- * child has exactly the fitter parent's structure.
+ * NEAT crossover. Takes each matching gene (same innovation) from a random
+ * parent, and disjoint and excess genes from `fitter` only. Thus the child has
+ * the structure of `fitter`.
  */
 export function crossover(fitter: Genome, other: Genome, rng: Rng): Genome {
   const otherConns = new Map(other.conns.map(c => [c.innov, c]));

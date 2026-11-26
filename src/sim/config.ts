@@ -10,8 +10,8 @@ export const CONFIG = {
   BG_WATER_HUE: 0.55,
   BG_SAND_HUE: 0.11,
 
-  // NEAT mutation
-  /** Chance that a child's weights get perturbed at all. */
+  // NEAT
+  /** Chance to perturb the weights of a mutated genome. */
   P_WEIGHT_PERTURB: 0.8,
   /** Std dev of the per-connection weight perturbation. */
   WEIGHT_PERTURB_SD: 0.3,

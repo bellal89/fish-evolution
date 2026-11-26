@@ -4,7 +4,7 @@ import type { Genome, InnovationTracker } from './genome';
 
 const clamp = (w: number) => Math.max(-CONFIG.WEIGHT_MAX, Math.min(CONFIG.WEIGHT_MAX, w));
 
-/** Returns a mutated copy of `g`; the parent is left untouched. */
+/** Returns a mutated copy of `g`. */
 export function mutateGenome(g: Genome, rng: Rng, t: InnovationTracker): Genome {
   const child: Genome = {
     nodes: g.nodes.map(n => ({ ...n })),
@@ -27,9 +27,9 @@ export function mutateGenome(g: Genome, rng: Rng, t: InnovationTracker): Genome 
 }
 
 /**
- * Adds one random new connection, in place. Skips pairs that already exist
- * (enabled or not) and pairs that would close a cycle. Disabled connections
- * count for the cycle check too, so re-enabling one later stays acyclic.
+ * Adds one random new connection in place. Does not add a pair that already
+ * exists, enabled or disabled, or a pair that closes a cycle. The cycle check
+ * includes disabled connections, so a toggle cannot make a cycle.
  */
 function addConnection(g: Genome, rng: Rng, t: InnovationTracker): void {
   const out = new Map<number, number[]>();
@@ -68,7 +68,7 @@ function addConnection(g: Genome, rng: Rng, t: InnovationTracker): void {
 /**
  * Splits one random enabled connection, in place: the connection is disabled,
  * `from→new` gets weight 1 and `new→to` keeps the old weight. Does nothing if
- * there is no enabled connection or this connection was already split here.
+ * no connection is enabled or if this genome already split the connection.
  */
 export function addNode(g: Genome, rng: Rng, t: InnovationTracker): void {
   const enabled = g.conns.filter(c => c.enabled);

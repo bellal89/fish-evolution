@@ -1,12 +1,11 @@
 import type { ConnGene, Genome } from './genome';
 
 /**
- * Feed-forward network built from a genome. Evaluation order is computed
- * once (Kahn's topological sort over enabled connections). Hidden and output
- * nodes use tanh, so a node with no enabled incoming connections outputs 0.
+ * Feed-forward network for a genome. The constructor computes the evaluation
+ * order once. Hidden and output nodes use tanh.
  */
 export class Network {
-  /** Last value of every node, keyed by node id. */
+  /** Node values from the last activate() call, by node id. */
   readonly activations = new Map<number, number>();
 
   private readonly nIn: number;
