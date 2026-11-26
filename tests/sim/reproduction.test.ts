@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { InnovationTracker, createMinimalGenome } from '../../src/neat/genome';
 import { CONFIG } from '../../src/sim/config';
 import { createFish, type Fish } from '../../src/sim/fish';
+import { addNode } from '../../src/neat/mutate';
 import { canMate, mate } from '../../src/sim/reproduction';
 import { Rng } from '../../src/sim/rng';
 import { INPUT_COUNT, OUTPUT_COUNT } from '../../src/sim/senses';
@@ -81,10 +82,36 @@ test('eggs sit at the midpoint with parents and hatch time; parents get cooldown
     expect(e.hatchAt).toBe(50 + CONFIG.HATCH_TICKS);
     expect(e.x).toBeCloseTo(a.x + 4);
     expect(e.y).toBe(a.y);
-    expect(e.genome.nodes.length).toBeGreaterThanOrEqual(a.genome.nodes.length);
   }
   expect(a.mateCooldown).toBe(CONFIG.MATE_COOLDOWN);
   expect(b.mateCooldown).toBe(CONFIG.MATE_COOLDOWN);
   expect(a.children).toBe(eggs.length);
   expect(b.children).toBe(eggs.length);
+});
+
+test('children inherit the structure of the higher-energy parent', () => {
+  // A separate tracker keeps mutation-made node ids apart from the extra node below.
+  const mutTracker = new InnovationTracker(5000);
+  const extraNodeId = (withNode: Fish, without: Fish): number => {
+    const known = new Set(without.genome.nodes.map(n => n.id));
+    return withNode.genome.nodes.find(n => !known.has(n.id))!.id;
+  };
+
+  const [a, b] = pair();
+  b.genome = structuredClone(a.genome);
+  addNode(b.genome, new Rng(5), tracker);
+  const extra = extraNodeId(b, a);
+
+  b.energy = 150;
+  a.energy = 100;
+  for (const e of mate(a, b, new Rng(1), mutTracker, 0, counter())) {
+    expect(e.genome.nodes.some(n => n.id === extra)).toBe(true);
+  }
+
+  b.energy = 100;
+  a.energy = 150;
+  a.mateCooldown = b.mateCooldown = 0;
+  for (const e of mate(a, b, new Rng(1), mutTracker, 0, counter())) {
+    expect(e.genome.nodes.some(n => n.id === extra)).toBe(false);
+  }
 });
