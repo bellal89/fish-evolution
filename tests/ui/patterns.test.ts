@@ -8,8 +8,12 @@ test('solid has no marks', () => {
   expect(patternMarks(base, 1, 20, 10)).toHaveLength(0);
 });
 
-test('stripes count equals patternCount', () => {
-  expect(patternMarks({ ...base, pattern: 'stripes' }, 1, 20, 10)).toHaveLength(3);
+test.each([
+  ['stripes', 4, 4, 'x'],
+  ['bands', 6, 3, 'y'],
+] as const)('%s: patternCount %i gives %i marks spread along %s', (pattern, patternCount, n, axis) => {
+  const marks = patternMarks({ ...base, pattern, patternCount }, 1, 20, 10);
+  expect(new Set(marks.map((m) => m[axis])).size).toBe(n);
 });
 
 test('spots are twice patternCount and stay inside body box', () => {
