@@ -99,6 +99,7 @@ export class Stats {
       const m = { ...a };
       for (const k of Object.keys(a) as (keyof StatPoint)[]) {
         if (k === 'tick' || k === 'topPatternM' || k === 'topPatternF') continue;
+        if (k === 'avgHueM' || k === 'avgHueF') { m[k] = circularMean([a[k], b[k]]); continue; }
         (m[k] as number) = ((a[k] as number) + (b[k] as number)) / 2;
       }
       out.push(m);

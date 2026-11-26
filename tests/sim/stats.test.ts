@@ -39,3 +39,17 @@ test('average hue is circular', () => {
   s.sample(w);
   expect(hueDist(s.history[0].avgHueM, 0)).toBeLessThan(1e-6);
 });
+
+test('merging points averages hue circularly', () => {
+  const w = new World(1);
+  const male = w.fish.find(f => f.sex === 'M')!;
+  w.fish = [male];
+  const s = new Stats();
+  for (let i = 0; i < CONFIG.STATS_MAX - 2; i++) s.sample(w);
+  male.traits.colorM.hue = 0.95;
+  s.sample(w);
+  male.traits.colorM.hue = 0.05;
+  s.sample(w);
+  expect(s.history).toHaveLength(CONFIG.STATS_MAX / 2);
+  expect(hueDist(s.history[s.history.length - 1].avgHueM, 0)).toBeLessThan(1e-6);
+});
