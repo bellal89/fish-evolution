@@ -18,6 +18,16 @@ test('creates algae along the bottom and on rock tops', () => {
   expect(food.algae.some((a) => a.y < H - CONFIG.SAND_H)).toBe(true);
 });
 
+test('exposes the generated rocks, inside the tank', () => {
+  const food = new FoodSystem(new Rng(1), W, H);
+  expect(food.rocks.length).toBe(CONFIG.ROCK_COUNT);
+  for (const r of food.rocks) {
+    expect(r.x).toBeGreaterThan(0);
+    expect(r.x).toBeLessThan(W);
+    expect(r.y).toBe(H - CONFIG.SAND_H);
+  }
+});
+
 test('food step conserves field+food total', () => {
   const f = makeField(1);
   const rng = new Rng(1);

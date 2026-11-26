@@ -34,8 +34,16 @@ export const CONFIG = {
   ROCK_COUNT: 4,
   /** Algae cells that sit on each rock top (the rest lie along the bottom). */
   ALGAE_PER_ROCK: 5,
+  /** Rock height range (ry). */
   ROCK_MIN_H: 60,
   ROCK_MAX_H: 160,
+  /** Rock half-width range (rx). */
+  ROCK_MIN_RX: 40,
+  ROCK_MAX_RX: 90,
+  /** Rocks stay this fraction of the tank width away from each side wall. */
+  ROCK_MARGIN_FRAC: 0.1,
+  /** Algae on a rock spread within this fraction of the rock half-width. */
+  ALGAE_ROCK_SPREAD: 0.6,
   ALGAE_INIT: 1,
   ALGAE_MAX: 10,
   /** Fraction of local fertilizer converted to algae biomass per tick. */

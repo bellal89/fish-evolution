@@ -5,6 +5,15 @@ import type { Rng } from './rng';
 
 export interface AlgaeCell { x: number; y: number; biomass: number }
 export interface Plankton { id: number; x: number; y: number; vx: number; vy: number; amount: number }
+export interface Rock {
+  x: number;
+  /** Ground level the rock sits on. */
+  y: number;
+  /** Half-width. */
+  rx: number;
+  /** Height. */
+  ry: number;
+}
 export interface Waste { x: number; y: number; vy: number; amount: number; bottomTicks: number }
 
 /** Algae, plankton and waste: everything that holds nutrients outside the fertilizer field. */
@@ -12,6 +21,7 @@ export class FoodSystem {
   algae: AlgaeCell[] = [];
   plankton: Plankton[] = [];
   waste: Waste[] = [];
+  readonly rocks: Rock[] = [];
   private nextId = 1;
   private readonly floorY: number;
 
@@ -19,10 +29,16 @@ export class FoodSystem {
     this.floorY = h - CONFIG.SAND_H;
     const onRocks = CONFIG.ROCK_COUNT * CONFIG.ALGAE_PER_ROCK;
     for (let r = 0; r < CONFIG.ROCK_COUNT; r++) {
-      const rockX = rng.range(0.1 * w, 0.9 * w);
-      const top = this.floorY - rng.range(CONFIG.ROCK_MIN_H, CONFIG.ROCK_MAX_H);
+      const rock: Rock = {
+        x: rng.range(CONFIG.ROCK_MARGIN_FRAC * w, (1 - CONFIG.ROCK_MARGIN_FRAC) * w),
+        y: this.floorY,
+        rx: rng.range(CONFIG.ROCK_MIN_RX, CONFIG.ROCK_MAX_RX),
+        ry: rng.range(CONFIG.ROCK_MIN_H, CONFIG.ROCK_MAX_H),
+      };
+      this.rocks.push(rock);
+      const spread = rock.rx * CONFIG.ALGAE_ROCK_SPREAD;
       for (let i = 0; i < CONFIG.ALGAE_PER_ROCK; i++) {
-        this.algae.push({ x: clamp(rockX + rng.range(-30, 30), 0, w), y: top, biomass: CONFIG.ALGAE_INIT });
+        this.algae.push({ x: rock.x + rng.range(-spread, spread), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
       }
     }
     for (let i = 0; i < CONFIG.ALGAE_CELLS - onRocks; i++) {
