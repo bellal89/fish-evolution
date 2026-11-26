@@ -125,7 +125,7 @@ function drawParticles(ctx: CanvasRenderingContext2D, scene: SceneView): void {
   ctx.fillStyle = 'rgba(105,78,45,0.85)';
   for (const w of scene.food.waste) {
     ctx.beginPath();
-    ctx.ellipse(w.x, w.y, 1.5 + w.amount * 2, 1.1 + w.amount * 1.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(w.x, w.y, 1.5 + Math.sqrt(w.amount) * 1.1, 1.1 + Math.sqrt(w.amount) * 0.7, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   for (const e of scene.food.eggs) {
