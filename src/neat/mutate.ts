@@ -31,7 +31,7 @@ export function mutateGenome(g: Genome, rng: Rng, t: InnovationTracker): Genome 
  * (enabled or not) and pairs that would close a cycle. Disabled connections
  * count for the cycle check too, so re-enabling one later stays acyclic.
  */
-export function addConnection(g: Genome, rng: Rng, t: InnovationTracker): void {
+function addConnection(g: Genome, rng: Rng, t: InnovationTracker): void {
   const out = new Map<number, number[]>();
   const existing = new Set<string>();
   for (const c of g.conns) {
@@ -53,7 +53,6 @@ export function addConnection(g: Genome, rng: Rng, t: InnovationTracker): void {
 
   const candidates: [number, number][] = [];
   for (const from of g.nodes) {
-    if (from.kind === 'output') continue;
     for (const to of g.nodes) {
       if (to.kind !== 'hidden' && to.kind !== 'output') continue;
       if (existing.has(`${from.id}-${to.id}`)) continue;

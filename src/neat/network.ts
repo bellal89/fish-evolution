@@ -45,7 +45,6 @@ export class Network {
     for (const id of queue) {
       if (id > this.nIn) this.order.push({ id, incoming: incoming.get(id)! });
     }
-    for (const n of g.nodes) this.activations.set(n.id, 0);
   }
 
   activate(inputs: Float32Array): Float32Array {

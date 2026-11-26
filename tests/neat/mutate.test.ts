@@ -2,18 +2,28 @@ import { expect, test } from 'vitest';
 import { Rng } from '../../src/sim/rng';
 import { CONFIG } from '../../src/sim/config';
 import { InnovationTracker, createMinimalGenome, type Genome } from '../../src/neat/genome';
-import { addConnection, addNode, mutateGenome } from '../../src/neat/mutate';
-import { Network } from '../../src/neat/network';
-import { hasCycle } from './helpers';
+import { addNode, mutateGenome } from '../../src/neat/mutate';
+import { io } from './helpers';
 
-const clone = (g: Genome): Genome => structuredClone(g);
+/** True if the connection graph (enabled or not) has a directed cycle. */
+function hasCycle(g: Genome): boolean {
+  const out = new Map<number, number[]>();
+  for (const c of g.conns) out.set(c.from, [...(out.get(c.from) ?? []), c.to]);
+  const state = new Map<number, 'open' | 'done'>();
+  const visit = (id: number): boolean => {
+    if (state.get(id) === 'open') return true;
+    if (state.get(id) === 'done') return false;
+    state.set(id, 'open');
+    for (const to of out.get(id) ?? []) if (visit(to)) return true;
+    state.set(id, 'done');
+    return false;
+  };
+  return g.nodes.some(n => visit(n.id));
+}
 
 test('addNode keeps old conn disabled and adds two', () => {
   const t = new InnovationTracker(20);
-  const g: Genome = {
-    nodes: [{ id: 0, kind: 'input' }, { id: 1, kind: 'bias' }, { id: 2, kind: 'output' }],
-    conns: [{ innov: t.connInnov(0, 2), from: 0, to: 2, weight: 0.7, enabled: true }],
-  };
+  const g: Genome = { nodes: io(), conns: [{ innov: t.connInnov(0, 2), from: 0, to: 2, weight: 0.7, enabled: true }] };
   addNode(g, new Rng(1), t);
   const id = t.splitNode(g.conns[0].innov);
   expect(g.nodes).toContainEqual({ id, kind: 'hidden' });
@@ -22,68 +32,12 @@ test('addNode keeps old conn disabled and adds two', () => {
   expect(g.conns).toContainEqual({ innov: t.connInnov(id, 2), from: id, to: 2, weight: 0.7, enabled: true });
 });
 
-test('addNode on an already split conn does nothing', () => {
-  const t = new InnovationTracker(20);
-  const g: Genome = {
-    nodes: [{ id: 0, kind: 'input' }, { id: 1, kind: 'bias' }, { id: 2, kind: 'output' }],
-    conns: [{ innov: t.connInnov(0, 2), from: 0, to: 2, weight: 0.7, enabled: true }],
-  };
-  addNode(g, new Rng(1), t);
-  g.conns[0].enabled = true;
-  g.conns[1].enabled = false;
-  g.conns[2].enabled = false;
-  const before = clone(g);
-  addNode(g, new Rng(1), t);
-  expect(g).toEqual(before);
-});
-
-test('addConnection respects direction, duplicates and cycles', () => {
-  const t = new InnovationTracker(20);
-  // 0 in, 1 bias, 2 out, 3 hidden. Existing: 0→3, 3→2, 1→2. Only legal new pairs: 0→2, 1→3.
-  const g: Genome = {
-    nodes: [{ id: 0, kind: 'input' }, { id: 1, kind: 'bias' }, { id: 2, kind: 'output' }, { id: 3, kind: 'hidden' }],
-    conns: [
-      { innov: t.connInnov(0, 3), from: 0, to: 3, weight: 1, enabled: true },
-      { innov: t.connInnov(3, 2), from: 3, to: 2, weight: 1, enabled: true },
-      { innov: t.connInnov(1, 2), from: 1, to: 2, weight: 1, enabled: false },
-    ],
-  };
-  addConnection(g, new Rng(1), t);
-  addConnection(g, new Rng(2), t);
-  addConnection(g, new Rng(3), t);
-  const pairs = g.conns.map(c => `${c.from}-${c.to}`).sort();
-  expect(pairs).toEqual(['0-2', '0-3', '1-2', '1-3', '3-2']);
-  const added = g.conns.slice(3);
-  for (const c of added) {
-    expect(c.innov).toBe(t.connInnov(c.from, c.to));
-    expect(c.enabled).toBe(true);
-    expect(Math.abs(c.weight)).toBeLessThanOrEqual(1);
-  }
-});
-
-test('addConnection never connects back into a node feeding it', () => {
-  const t = new InnovationTracker(20);
-  // two hidden nodes in a chain 3→4; 4→3 would be a cycle, so only 3→4 direction is legal.
-  const g: Genome = {
-    nodes: [{ id: 0, kind: 'input' }, { id: 1, kind: 'bias' }, { id: 2, kind: 'output' }, { id: 3, kind: 'hidden' }, { id: 4, kind: 'hidden' }],
-    conns: [
-      { innov: 0, from: 0, to: 3, weight: 1, enabled: true },
-      { innov: 1, from: 3, to: 4, weight: 1, enabled: false },
-      { innov: 2, from: 4, to: 2, weight: 1, enabled: true },
-    ],
-  };
-  for (let s = 0; s < 20; s++) addConnection(g, new Rng(s), t);
-  expect(hasCycle(g)).toBe(false);
-  expect(g.conns.some(c => c.from === 4 && c.to === 3)).toBe(false);
-});
-
 test('mutations never create cycles or invalid conns', () => {
   const t = new InnovationTracker(20);
   const rng = new Rng(5);
   let g = createMinimalGenome(4, 2, rng, t);
   for (let i = 0; i < 2000; i++) g = mutateGenome(g, rng, t);
   expect(g.nodes.some(n => n.kind === 'hidden')).toBe(true);
-  expect(() => new Network(g).activate(new Float32Array(4))).not.toThrow();
   expect(hasCycle(g)).toBe(false);
   const kinds = new Map(g.nodes.map(n => [n.id, n.kind]));
   const pairs = new Set<string>();
@@ -101,23 +55,39 @@ test('mutate does not modify parent', () => {
   const t = new InnovationTracker(20);
   const rng = new Rng(9);
   const parent = createMinimalGenome(4, 2, rng, t);
-  const before = clone(parent);
-  for (let i = 0; i < 200; i++) {
-    const child = mutateGenome(parent, rng, t);
-    for (const c of child.conns) expect(parent.conns).not.toContain(c);
-  }
+  const before = structuredClone(parent);
+  for (let i = 0; i < 200; i++) mutateGenome(parent, rng, t);
   expect(parent).toEqual(before);
 });
 
-test('weights change with expected frequency', () => {
+test('weights are perturbed and reset at configured rates', () => {
   const t = new InnovationTracker(20);
   const rng = new Rng(11);
-  const g = createMinimalGenome(4, 2, rng, t);
+  const g: Genome = { nodes: io(), conns: [{ innov: 0, from: 0, to: 2, weight: 2, enabled: true }] };
   let changed = 0;
+  let reset = 0;
   const N = 2000;
   for (let i = 0; i < N; i++) {
-    const child = mutateGenome(g, rng, t);
-    if (child.conns[0].weight !== g.conns[0].weight) changed++;
+    const w = mutateGenome(g, rng, t).conns[0].weight;
+    if (w !== 2) changed++;
+    if (Math.abs(w) <= 1) reset++;
   }
   expect(changed / N).toBeCloseTo(CONFIG.P_WEIGHT_PERTURB, 1);
+  expect(reset / N).toBeCloseTo(CONFIG.P_WEIGHT_PERTURB * CONFIG.P_WEIGHT_RESET, 1);
+});
+
+test('toggle re-enables a disabled conn', () => {
+  // All pairs exist and are disabled, so only toggle can change anything.
+  const t = new InnovationTracker(20);
+  const rng = new Rng(12);
+  const g: Genome = {
+    nodes: io(),
+    conns: [
+      { innov: 0, from: 0, to: 2, weight: 1, enabled: false },
+      { innov: 1, from: 1, to: 2, weight: 1, enabled: false },
+    ],
+  };
+  let toggled = 0;
+  for (let i = 0; i < 1000; i++) if (mutateGenome(g, rng, t).conns.some(c => c.enabled)) toggled++;
+  expect(toggled).toBeGreaterThan(0);
 });

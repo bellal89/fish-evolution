@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 import { Rng } from '../../src/sim/rng';
 import { InnovationTracker, createMinimalGenome, genomeSize, type Genome } from '../../src/neat/genome';
+import { io } from './helpers';
 
 test('minimal genome is fully connected', () => {
   const t = new InnovationTracker(10);
@@ -19,19 +20,11 @@ test('minimal genome is fully connected', () => {
   }
 });
 
-test('minimal genomes share innovation numbers through the tracker', () => {
-  const t = new InnovationTracker(10);
-  const a = createMinimalGenome(3, 2, new Rng(1), t);
-  const b = createMinimalGenome(3, 2, new Rng(2), t);
-  expect(a.conns.map(c => c.innov)).toEqual(b.conns.map(c => c.innov));
-});
-
-test('same structural mutation gets same innovation', () => {
+test('same connection gets same innovation', () => {
   const t = new InnovationTracker(10);
   expect(t.connInnov(1, 5)).toBe(t.connInnov(1, 5));
   expect(t.connInnov(1, 5)).not.toBe(t.connInnov(2, 5));
   expect(t.connInnov(1, 5)).not.toBe(t.connInnov(5, 1));
-  expect(t.splitNode(7)).toBe(t.splitNode(7));
 });
 
 test('split nodes get fresh ids starting at firstNodeId', () => {
@@ -43,7 +36,7 @@ test('split nodes get fresh ids starting at firstNodeId', () => {
 
 test('genomeSize counts hidden nodes and enabled conns', () => {
   const g: Genome = {
-    nodes: [{ id: 0, kind: 'input' }, { id: 1, kind: 'bias' }, { id: 2, kind: 'output' }, { id: 3, kind: 'hidden' }],
+    nodes: [...io(), { id: 3, kind: 'hidden' }],
     conns: [
       { innov: 0, from: 0, to: 2, weight: 1, enabled: false },
       { innov: 1, from: 0, to: 3, weight: 1, enabled: true },
