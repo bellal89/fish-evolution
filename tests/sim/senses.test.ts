@@ -55,6 +55,12 @@ test('food straight ahead lights middle ray food channel', () => {
   for (const ray of [0, 1, 3, 4]) expect(out[ray * 3]).toBe(0);
 });
 
+test('food the fish is inside reads full strength on every ray', () => {
+  const me = makeFish(100, 450);
+  const out = run(me, makeCtx([me], [{ x: 101, y: 450, amount: 1 }]));
+  for (let r = 0; r < CONFIG.RAY_COUNT; r++) expect(out[r * 3]).toBe(1);
+});
+
 test('predator behind is invisible to eyes but felt by lateral line', () => {
   const me = makeFish(100, 450);
   const pred: SensingPredator = { x: 60, y: 450, speed: 3, maxSpeed: 4, size: 20 };
