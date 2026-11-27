@@ -212,3 +212,58 @@ test('picking the selected fish and a history entry uses their brains', () => {
     colorM: owner.traits.colorM, colorF: owner.traits.colorF,
   }]);
 });
+
+test('import replaces the world, the charts and the selection', () => {
+  const other = setup(() => 0, 5);
+  other.loop.handle({ type: 'speed', speed: 50 });
+  other.loop.frame(0);
+  other.loop.frame(200);
+  const s = other.loop.save();
+  expect(s.history.length).toBeGreaterThan(0);
+  const { loop, snaps } = setup();
+  loop.handle({ type: 'speed', speed: 0 });
+  loop.frame(0);
+  loop.handle({ type: 'select', id: snaps()[0].fish[0].id });
+  loop.importSave(structuredClone(s));
+  loop.frame(1000);
+  const snap = snaps().at(-1)!;
+  expect(snap.tick).toBe(s.world.tick);
+  expect(snap.selected).toBeNull();
+  expect(snap.stats).toEqual(s.history);
+});
+
+test('a failed import changes nothing', () => {
+  const { loop, snaps } = setup();
+  loop.handle({ type: 'speed', speed: 50 });
+  loop.frame(0);
+  loop.frame(100);
+  loop.handle({ type: 'speed', speed: 0 });
+  const before = snaps().at(-1)!;
+  const history = loop.save().history;
+  expect(history).toHaveLength(1);
+  loop.handle({ type: 'select', id: before.fish[0].id });
+  expect(() => loop.importSave({ world: {} } as LoopSave)).toThrow();
+  loop.frame(1000);
+  const after = snaps().at(-1)!;
+  expect(after.tick).toBe(before.tick);
+  expect(after.fish.map(f => f.id)).toEqual(before.fish.map(f => f.id));
+  expect(after.selected!.id).toBe(before.fish[0].id);
+  expect(after.stats).toBeUndefined();
+  expect(loop.save().history).toBe(history);
+});
+
+test('export while the arena is open saves the main world', () => {
+  const { loop, snaps } = setup();
+  loop.handle({ type: 'speed', speed: 10 });
+  loop.frame(0);
+  loop.frame(100);
+  const main = snaps().at(-1)!;
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  loop.handle({ type: 'arenaSpeed', speed: 10 });
+  loop.frame(200);
+  loop.frame(300);
+  const s = loop.save();
+  expect(s.world.tick).toBe(main.tick);
+  expect(s.world.fish).toHaveLength(main.fish.length);
+  expect(s.world.fish.length).toBeGreaterThan(CONFIG.ARENA_FISH);
+});

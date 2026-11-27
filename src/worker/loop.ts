@@ -42,6 +42,16 @@ export class SimLoop {
     return { world: this.world.save(), history: this.stats.history };
   }
 
+  /** Replaces the main world and its charts. A bad save throws before anything changes. */
+  importSave(save: LoopSave): void {
+    this.world = new World(save.world);
+    this.stats = new Stats();
+    this.stats.history = save.history;
+    this.selectedId = null;
+    this.statsDirty = true;
+    this.debt = 0;
+  }
+
   handle(msg: ToWorker): void {
     switch (msg.type) {
       case 'speed': this.speed = msg.speed; break;

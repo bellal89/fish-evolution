@@ -27,6 +27,9 @@ export function mountControls(
       : `<button data-speed>x${s}</button>`).join('')}
     <button data-act="restart" title="Start a new world">⟲ Restart</button>
     <button data-act="arena" title="Compare two brains side by side">Arena</button>
+    <button data-act="export" title="Download this world as a file">Export</button>
+    <button data-act="import" title="Load a world from a file">Import</button>
+    <input type="file" accept=".gz" hidden>
     <span id="info"></span>
     <div id="extinct" hidden><div>Population extinct</div><button id="restart">Start over</button></div>
   `;
@@ -59,8 +62,11 @@ export function mountControls(
   root.querySelector<HTMLButtonElement>('[data-act="restart"]')!.onclick = () => {
     if (confirm('Start a new world? The current world will be lost.')) restart();
   };
-  // The main speed and Restart act on the main world, which pauses while the arena is open.
-  const mainButtons = [pauseBtn, playBtn, ...speedButtons, root.querySelector<HTMLButtonElement>('[data-act="restart"]')!];
+  // The main speed, Restart and Import act on the main world, which pauses while the arena is open.
+  const importBtn = root.querySelector<HTMLButtonElement>('[data-act="import"]')!;
+  const mainButtons = [
+    pauseBtn, playBtn, ...speedButtons, root.querySelector<HTMLButtonElement>('[data-act="restart"]')!, importBtn,
+  ];
   const arenaBtn = root.querySelector<HTMLButtonElement>('[data-act="arena"]')!;
   let arenaOpen = false;
   arenaBtn.onclick = () => {
@@ -69,6 +75,16 @@ export function mountControls(
     arenaBtn.title = arenaOpen ? 'Return to the main world' : 'Compare two brains side by side';
     for (const b of mainButtons) b.hidden = arenaOpen;
     onArena(arenaOpen);
+  };
+  root.querySelector<HTMLButtonElement>('[data-act="export"]')!.onclick = () => send({ type: 'export' });
+  const file = root.querySelector<HTMLInputElement>('input[type="file"]')!;
+  importBtn.onclick = () => {
+    if (confirm('Replace the current world with the world from this file? The current world will be lost.')) file.click();
+  };
+  file.onchange = async () => {
+    const f = file.files![0];
+    file.value = '';
+    send({ type: 'import', data: await f.arrayBuffer() });
   };
   highlight();
 

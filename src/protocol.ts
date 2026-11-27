@@ -117,7 +117,16 @@ export type ToWorker =
   /** With a seed, a new start; without, the same start again. */
   | { type: 'arenaRestart'; seed?: number }
   | { type: 'arenaSpeed'; speed: ArenaSpeed }
-  | { type: 'arenaSelect'; side: Side; id: number | null };
+  | { type: 'arenaSelect'; side: Side; id: number | null }
+  /** Send the main world as a file. */
+  | { type: 'export' }
+  /** Replace the main world with the world in a file. */
+  | { type: 'import'; data: ArrayBuffer };
 
 /** While the arena is open, only arena messages go out. */
-export type FromWorker = { type: 'snapshot'; snap: Snapshot } | { type: 'arena'; arena: ArenaSnapshot };
+export type FromWorker =
+  | { type: 'snapshot'; snap: Snapshot }
+  | { type: 'arena'; arena: ArenaSnapshot }
+  /** A gzipped save file; `tick` is the main world tick. */
+  | { type: 'exported'; data: ArrayBuffer; tick: number }
+  | { type: 'importResult'; error: string | null };

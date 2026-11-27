@@ -44,12 +44,12 @@ export function decodeSave(text: string): LoopSave {
   return file.data;
 }
 
-async function pipe(bytes: Uint8Array, stream: TransformStream<BufferSource, Uint8Array>): Promise<Uint8Array> {
+async function pipe(bytes: Uint8Array, stream: TransformStream<BufferSource, Uint8Array>): Promise<Uint8Array<ArrayBuffer>> {
   const out = new Blob([bytes as BufferSource]).stream().pipeThrough(stream);
   return new Uint8Array(await new Response(out).arrayBuffer());
 }
 
-export async function packSave(data: LoopSave): Promise<Uint8Array> {
+export async function packSave(data: LoopSave): Promise<Uint8Array<ArrayBuffer>> {
   return pipe(new TextEncoder().encode(encodeSave(data)), new CompressionStream('gzip'));
 }
 

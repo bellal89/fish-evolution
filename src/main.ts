@@ -2,7 +2,7 @@ import './style.css';
 import type { FromWorker, Snapshot, ToWorker } from './protocol';
 import { mountArena } from './ui/arena';
 import { mountCharts } from './ui/charts';
-import { mountControls } from './ui/controls';
+import { mountControls, simTime } from './ui/controls';
 import { pickFish } from './ui/pick';
 import { mountInspector } from './ui/inspector';
 import { drawAquarium } from './ui/render';
@@ -42,15 +42,30 @@ document.addEventListener('visibilitychange', () => {
 
 let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
-  if (e.data.type === 'arena') {
-    arena.update(e.data.arena);
-    return;
+  const m = e.data;
+  switch (m.type) {
+    case 'snapshot':
+      snap = m.snap;
+      controls.update(snap);
+      if (snap.stats) charts.update(snap.stats);
+      inspector.update(snap);
+      break;
+    case 'arena': arena.update(m.arena); break;
+    case 'exported': download(new Blob([m.data]), `fish-evolution-${simTime(m.tick).replaceAll(':', '-')}.json.gz`); break;
+    case 'importResult':
+      if (m.error) alert(m.error);
+      else inspector.setWanted(null);
+      break;
   }
-  snap = e.data.snap;
-  controls.update(snap);
-  if (snap.stats) charts.update(snap.stats);
-  inspector.update(snap);
 };
+
+function download(blob: Blob, name: string): void {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 
 function resize(): void {
   const dpr = window.devicePixelRatio || 1;

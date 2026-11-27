@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
-import type { ToWorker } from '../protocol';
+import type { FromWorker, ToWorker } from '../protocol';
 import { CONFIG } from '../sim/config';
-import { SAVE_VERSION } from '../saveFile';
+import { SAVE_VERSION, packSave, unpackSave } from '../saveFile';
 import { SimLoop, type LoopSave } from './loop';
 
 const SAVE_KEY = 'world';
@@ -31,10 +31,30 @@ async function save(loop: SimLoop): Promise<void> {
   db.transaction('saves', 'readwrite').objectStore('saves').put({ version: SAVE_VERSION, data: loop.save() }, SAVE_KEY);
 }
 
+async function exportWorld(loop: SimLoop): Promise<void> {
+  const save = loop.save();
+  const { buffer } = await packSave(save);
+  postMessage({ type: 'exported', data: buffer, tick: save.world.tick } satisfies FromWorker, [buffer]);
+}
+
+async function importWorld(loop: SimLoop, data: ArrayBuffer): Promise<void> {
+  try {
+    loop.importSave(await unpackSave(new Uint8Array(data)));
+  } catch {
+    postMessage({ type: 'importResult', error: 'This file is not a world from this version of the app. Nothing changed.' } satisfies FromWorker);
+    return;
+  }
+  postMessage({ type: 'importResult', error: null } satisfies FromWorker);
+  await save(loop);
+}
+
 function run(loop: SimLoop): void {
   self.onmessage = (e: MessageEvent<ToWorker>) => {
-    loop.handle(e.data);
-    if (e.data.type === 'reset' || e.data.type === 'save') save(loop).catch(() => {});
+    const msg = e.data;
+    if (msg.type === 'export') exportWorld(loop);
+    else if (msg.type === 'import') importWorld(loop, msg.data).catch(() => {});
+    else loop.handle(msg);
+    if (msg.type === 'reset' || msg.type === 'save') save(loop).catch(() => {});
   };
   setInterval(() => save(loop).catch(() => {}), CONFIG.SAVE_INTERVAL_MS);
   const frame = (): void => {
