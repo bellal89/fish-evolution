@@ -44,14 +44,18 @@ export class Lineage {
     return this.records.get(id)?.living ?? 0;
   }
 
+  /** Up to `n` records with living descendants: most living first, ties by lowest id. */
+  top(n: number): { id: number; genome: Genome; traits: Traits; living: number }[] {
+    return [...this.records.values()]
+      .filter(r => r.living > 0)
+      .sort((a, b) => b.living - a.living || a.id - b.id)
+      .slice(0, n)
+      .map(({ id, genome, traits, living }) => ({ id, genome, traits, living }));
+  }
+
   /** Record with the most living descendants (ties: lowest id), or null. */
   leader(): { id: number; genome: Genome; traits: Traits; living: number } | null {
-    let best: LineageRecord | null = null;
-    for (const r of this.records.values()) {
-      if (r.living <= 0) continue;
-      if (!best || r.living > best.living || (r.living === best.living && r.id < best.id)) best = r;
-    }
-    return best && { id: best.id, genome: best.genome, traits: best.traits, living: best.living };
+    return this.top(1)[0] ?? null;
   }
 
   /** Distinct ancestors of `id` up to LINEAGE_DEPTH generations back. */

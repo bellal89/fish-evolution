@@ -92,3 +92,13 @@ test('leader returns the traits given at birth', () => {
   l.died(2);
   expect(l.leader()!.traits).toBe(tr[1]);
 });
+
+test('top orders by living, then id', () => {
+  const l = family();
+  l.died(1);
+  l.died(2);
+  // Living: 1 and 2 have 3 each; 3 and 5 have 1 each; 4 and 6 have 0.
+  expect(l.top(10).map(r => [r.id, r.living])).toEqual([[1, 3], [2, 3], [3, 1], [5, 1]]);
+  expect(l.top(1)[0].traits).toBe(tr[1]);
+  expect(l.top(2).map(r => r.id)).toEqual([1, 2]);
+});
