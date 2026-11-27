@@ -123,7 +123,7 @@ export type ToWorker =
   /** Replace the main world with the world in a file. */
   | { type: 'import'; data: ArrayBuffer };
 
-/** While the arena is open, only arena messages go out. */
+/** While the arena is open, the worker sends arena messages instead of snapshots. */
 export type FromWorker =
   | { type: 'snapshot'; snap: Snapshot }
   | { type: 'arena'; arena: ArenaSnapshot }
