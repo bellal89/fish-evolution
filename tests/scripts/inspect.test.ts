@@ -32,3 +32,11 @@ test('summarize names the main facts', () => {
     expect(out).toContain(s);
   }
 });
+
+test('summarize an extinct world has no trait ranges', () => {
+  const w = new World(1);
+  w.fish = [];
+  const out = summarize(w);
+  expect(out).toContain('fish 0');
+  expect(out).not.toMatch(/Infinity|NaN/);
+});

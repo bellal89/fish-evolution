@@ -27,13 +27,15 @@ export function summarize(w: World): string {
   const lines = [
     `tick ${w.tick} (${simTime(w.tick)})${w.extinct ? ', extinct' : ''}`,
     `fish ${w.fish.length}: ${males.length} males, ${females.length} females; eggs ${w.eggs.length}`,
-    '',
-    'Traits (mean, min-max):',
   ];
-  for (const k of SCALAR_KEYS) {
-    const v = w.fish.map(f => f.traits[k]);
-    const mean = v.reduce((s, x) => s + x, 0) / (v.length || 1);
-    lines.push(`  ${k.padEnd(15)} ${mean.toFixed(2)}  ${Math.min(...v).toFixed(2)}-${Math.max(...v).toFixed(2)}`);
+  // An extinct world has no traits to show.
+  if (w.fish.length > 0) {
+    lines.push('', 'Traits (mean, min-max):');
+    for (const k of SCALAR_KEYS) {
+      const v = w.fish.map(f => f.traits[k]);
+      const mean = v.reduce((s, x) => s + x, 0) / v.length;
+      lines.push(`  ${k.padEnd(15)} ${mean.toFixed(2)}  ${Math.min(...v).toFixed(2)}-${Math.max(...v).toFixed(2)}`);
+    }
   }
   const hue = (fs: typeof w.fish, sex: 'M' | 'F') =>
     Math.round(modeHue(fs.map(f => (sex === 'M' ? f.traits.colorM : f.traits.colorF).hue)) * 360);
