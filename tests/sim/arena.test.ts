@@ -1,12 +1,12 @@
 import { expect, test } from 'vitest';
-import { arenaTraits, randomBrain, type ArenaSetup, type Brain } from '../../src/sim/arena';
+import { arenaTraits, randomBrain, type Brain } from '../../src/sim/arena';
 import { CONFIG } from '../../src/sim/config';
 import { Rng } from '../../src/sim/rng';
 import { INPUT_COUNT } from '../../src/sim/senses';
 import { SCALAR_KEYS, randomTraits } from '../../src/sim/traits';
 import { World } from '../../src/sim/world';
 
-const setup = (b: Brain): ArenaSetup => ({ genome: b.genome, traits: arenaTraits(b.traits) });
+const setup = (b: Brain): Brain => ({ genome: b.genome, traits: arenaTraits(b.traits) });
 const state = (w: World) =>
   JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
 

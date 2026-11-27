@@ -10,12 +10,6 @@ export interface Brain {
   traits: Traits;
 }
 
-/** What the fish of one arena side get. `traits` is already the arena body. */
-export interface ArenaSetup {
-  genome: Genome;
-  traits: Traits;
-}
-
 /** The standard arena body: each scalar trait at the midpoint of its range. Colors and preferences stay the owner's. */
 export function arenaTraits(owner: Traits): Traits {
   const t = { ...owner };

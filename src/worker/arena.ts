@@ -12,7 +12,7 @@ export interface ArenaPick {
 /** Two arena worlds with the same start that step in lockstep. */
 export class Arena {
   speed: ArenaSpeed = 1;
-  private _worlds!: [World, World];
+  worlds!: [World, World];
   private brains!: [Brain, Brain];
   private selected: [number | null, number | null] = [null, null];
 
@@ -20,13 +20,9 @@ export class Arena {
     this.restart();
   }
 
-  get worlds(): readonly [World, World] {
-    return this._worlds;
-  }
-
   /** Both sides are extinct. */
   get done(): boolean {
-    return this._worlds.every(w => w.extinct);
+    return this.worlds.every(w => w.extinct);
   }
 
   /** Sets the brain of a side and restarts both sides with the current seed. */
@@ -41,7 +37,7 @@ export class Arena {
     const brain = (side: Side): Brain => this.picks[side].brain ?? randomBrain(seed, side);
     this.brains = [brain(0), brain(1)];
     const world = ({ genome, traits }: Brain) => new World(seed, { genome, traits: arenaTraits(traits) });
-    this._worlds = [world(this.brains[0]), world(this.brains[1])];
+    this.worlds = [world(this.brains[0]), world(this.brains[1])];
     this.selected = [null, null];
   }
 
@@ -51,12 +47,12 @@ export class Arena {
 
   /** Steps both sides. An extinct side does not step, so its clock stops. */
   step(): void {
-    for (const w of this._worlds) w.step();
+    for (const w of this.worlds) w.step();
   }
 
   view(): { speed: ArenaSpeed; choices: [BrainChoice, BrainChoice]; sides: [ArenaSideView, ArenaSideView] } {
     const side = (s: Side): ArenaSideView => {
-      const w = this._worlds[s];
+      const w = this.worlds[s];
       const id = this.selected[s];
       const shown = w.fish.some(f => f.id === id) ? id : (w.fish[0]?.id ?? null);
       return { scene: makeSnapshot(w, shown), foodEaten: w.events.foodEaten, genome: this.brains[s].genome };

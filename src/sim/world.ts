@@ -1,5 +1,5 @@
 import { InnovationTracker, createMinimalGenome } from '../neat/genome';
-import type { ArenaSetup } from './arena';
+import type { Brain } from './arena';
 import { CONFIG } from './config';
 import {
   advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
@@ -91,8 +91,11 @@ export class World {
   private readonly senseCtx: SenseContext;
   private readonly predView: PredatorView;
 
-  /** Creates a new world from a seed, or continues a saved one. With `arena`, it is one side of the arena. */
-  constructor(from: number | WorldSave, arena?: ArenaSetup) {
+  /**
+   * Creates a new world from a seed, or continues a saved one.
+   * With `arena`, it is one side of the arena: its fish get that brain, and its traits are the arena body.
+   */
+  constructor(from: number | WorldSave, arena?: Brain) {
     this.arena = arena !== undefined;
     if (typeof from === 'number') {
       const { TANK_W: w, TANK_H: h } = CONFIG;

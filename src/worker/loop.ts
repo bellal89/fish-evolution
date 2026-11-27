@@ -84,9 +84,9 @@ export class SimLoop {
 
   /** The brain for an arena choice. Genomes and traits never change after birth, so a reference is a copy. */
   private pick(choice: BrainChoice): ArenaPick {
-    const brain = ({ genome, traits }: Brain): ArenaPick => ({ choice, brain: { genome, traits } });
+    const brain = (b: Brain | null): ArenaPick => ({ choice, brain: b });
     switch (choice.kind) {
-      case 'random': return { choice, brain: null };
+      case 'random': return brain(null);
       case 'leader': return brain(this.world.lineage.leader()!);
       case 'selected': return brain(this.world.fish.find(f => f.id === this.selectedId)!);
       case 'history': return brain(this.world.leaderHistory[choice.index]);

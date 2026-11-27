@@ -5,7 +5,7 @@ import type { LoopSave } from './worker/loop';
 /** Bump when the saved state changes shape, so that an old save is ignored. */
 export const SAVE_VERSION = 3;
 
-export interface SaveFile {
+interface SaveFile {
   version: number;
   data: LoopSave;
 }
