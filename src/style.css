@@ -3,6 +3,7 @@ html, body { margin: 0; height: 100%; background: #0b1820; overflow: hidden; fon
 #bar { position: fixed; top: 10px; left: 10px; display: flex; gap: 6px; }
 #bar button, .tabs button { color: #dfe; border: 1px solid #3a5868; border-radius: 6px; cursor: pointer; }
 #bar button { background: rgba(10,25,35,0.75); padding: 6px 10px; }
+#bar button[data-act="restart"] { margin-left: 18px; }
 #bar button:hover { background: rgba(30,60,75,0.9); }
 #bar button.active, .tabs button.active { background: #2f6f8a; border-color: #7fc4de; }
 #bar span { align-self: center; color: #dfe; font-size: 13px; font-variant-numeric: tabular-nums; }

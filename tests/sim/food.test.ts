@@ -21,7 +21,12 @@ test('rocks sit on the sand inside the tank, algae on the sand and rock tops', (
     expect(r.y).toBe(H - CONFIG.SAND_H);
   }
   expect(food.algae.length).toBe(CONFIG.ALGAE_CELLS);
-  expect(food.algae.some((a) => a.y < H - CONFIG.SAND_H)).toBe(true);
+  const onRocks = food.algae.filter((a) => a.y < H - CONFIG.SAND_H);
+  expect(onRocks.length).toBe(CONFIG.ROCK_COUNT * CONFIG.ALGAE_PER_ROCK);
+  // Each sits on the surface of a rock's half-ellipse, not above it.
+  for (const a of onRocks) {
+    expect(food.rocks.some((r) => Math.abs(((a.x - r.x) / r.rx) ** 2 + ((a.y - r.y) / r.ry) ** 2 - 1) < 1e-9)).toBe(true);
+  }
   for (const a of food.algae) {
     expect(a.x).toBeGreaterThanOrEqual(0);
     expect(a.x).toBeLessThanOrEqual(W);
@@ -109,4 +114,17 @@ test('plankton spawns under the light spot, which sweeps the tank', () => {
   };
   expect(meanX(0)).toBeLessThan(W / 4);
   expect(meanX(CONFIG.LIGHT_PERIOD_TICKS / 2)).toBeGreaterThan((W * 3) / 4);
+});
+
+test('plankton dies off in the dark and dissolves; under the light it lives', () => {
+  const f = makeField(0);
+  const rng = new Rng(8);
+  const food = new FoodSystem(rng, W, H);
+  food.algae.length = 0;
+  const lit = { x: 0, y: 0, vx: 0, vy: 0, amount: 1 };
+  food.plankton = [lit, ...Array.from({ length: 50 }, () => ({ x: W, y: 500, vx: 0, vy: 0, amount: 1 }))];
+  for (let i = 0; i < 3000; i++) food.step(f, rng, 0);
+  expect(food.plankton).toContain(lit);
+  expect(food.plankton.length).toBeLessThan(20);
+  expect(f.total() + food.total()).toBeCloseTo(51, 6);
 });

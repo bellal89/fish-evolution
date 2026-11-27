@@ -123,7 +123,8 @@ function drawSand(ctx: CanvasRenderingContext2D, W: number, H: number): void {
 }
 
 function drawRock(ctx: CanvasRenderingContext2D, r: Rock): void {
-  const g = ctx.createRadialGradient(r.x - r.rx * 0.3, r.y - r.ry * 0.8, r.rx * 0.1, r.x, r.y, r.rx * 1.2);
+  // The outer circle must contain the inner one, or the canvas paints a cone and leaves gaps.
+  const g = ctx.createRadialGradient(r.x - r.rx * 0.3, r.y - r.ry * 0.8, r.rx * 0.1, r.x, r.y, Math.max(r.rx, r.ry) * 1.2);
   g.addColorStop(0, '#9aa3a8');
   g.addColorStop(1, '#3f474c');
   ctx.fillStyle = g;

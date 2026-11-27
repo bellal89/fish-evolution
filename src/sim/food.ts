@@ -38,7 +38,10 @@ export class FoodSystem {
       this.rocks.push(rock);
       const spread = rock.rx * CONFIG.ALGAE_ROCK_SPREAD;
       for (let i = 0; i < CONFIG.ALGAE_PER_ROCK; i++) {
-        this.algae.push({ x: rock.x + rng.range(-spread, spread), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
+        const dx = rng.range(-spread, spread);
+        // On the surface of the half-ellipse that the renderer draws.
+        const y = rock.y - rock.ry * Math.sqrt(1 - (dx / rock.rx) ** 2);
+        this.algae.push({ x: rock.x + dx, y, biomass: CONFIG.ALGAE_INIT });
       }
     }
     for (let i = 0; i < CONFIG.ALGAE_CELLS - onRocks; i++) {
@@ -49,6 +52,7 @@ export class FoodSystem {
   step(field: FertilizerField, rng: Rng, tick: number): void {
     this.growAlgae(field);
     this.spawnPlankton(field, rng, tick);
+    this.dieInDark(field, rng, tick);
     this.movePlankton(rng);
     this.moveWaste(field);
   }
@@ -69,6 +73,15 @@ export class FoodSystem {
       const amount = field.take(x, y, CONFIG.PLANKTON_AMOUNT);
       this.plankton.push({ x, y, vx: 0, vy: 0, amount });
     }
+  }
+
+  /** Plankton dies off where the light is weak and dissolves into the field. */
+  private dieInDark(field: FertilizerField, rng: Rng, tick: number): void {
+    this.plankton = this.plankton.filter(p => {
+      if (!rng.chance(CONFIG.PLANKTON_DARK_DEATH * (1 - lightAt(p.x, p.y, tick)))) return true;
+      field.add(p.x, p.y, p.amount);
+      return false;
+    });
   }
 
   private movePlankton(rng: Rng): void {

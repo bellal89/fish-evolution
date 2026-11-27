@@ -46,12 +46,14 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   pauseBtn.onclick = () => setSpeed(0);
   playBtn.onclick = () => setSpeed(lastRunning);
   speedButtons.forEach((b, i) => (b.onclick = () => setSpeed(SPEEDS[i])));
-  for (const b of root.querySelectorAll<HTMLButtonElement>('#restart, [data-act="restart"]')) {
-    b.onclick = () => {
-      send({ type: 'reset', seed: Date.now() });
-      setSpeed(1);
-    };
-  }
+  const restart = (): void => {
+    send({ type: 'reset', seed: Date.now() });
+    setSpeed(1);
+  };
+  root.querySelector<HTMLButtonElement>('#restart')!.onclick = restart;
+  root.querySelector<HTMLButtonElement>('[data-act="restart"]')!.onclick = () => {
+    if (confirm('Start a new world? The current world will be lost.')) restart();
+  };
   highlight();
 
   return {

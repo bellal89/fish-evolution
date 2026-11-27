@@ -89,6 +89,8 @@ export const CONFIG = {
   PLANKTON_FERT_MIN: 0.5,
   PLANKTON_AMOUNT: 2,
   PLANKTON_MAX: 400,
+  /** Chance per tick that plankton in full darkness dies and dissolves. */
+  PLANKTON_DARK_DEATH: 0.0008,
   /** Std dev of the random velocity kick per tick. */
   PLANKTON_DRIFT: 0.02,
   PLANKTON_DAMPING: 0.98,
