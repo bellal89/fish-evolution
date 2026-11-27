@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { World } from '../../src/sim/world';
 
-// Pinned with the balanced CONFIG (Task 14): optimisations must keep results bit-identical.
+// Optimisations must keep results bit-identical; re-pin whenever CONFIG changes.
 test('world fingerprint after 2000 ticks of seed 7', () => {
   const w = new World(7);
   for (let i = 0; i < 2000; i++) w.step();

@@ -96,12 +96,12 @@ export class ScriptedPredator implements PredatorController {
     return null;
   }
 
-  /** Nearest fish inside the view cone and within its color-scaled range. */
+  /** Nearest fish inside the view cone and within its color-scaled range; none while sated. */
   private spot(p: Predator, view: PredatorView): Fish | null {
-    const reach = p.satiety > 0 ? CONFIG.PRED_LAZY_RANGE : CONFIG.PRED_VIEW_RANGE;
+    if (p.satiety > 0) return null;
     let best: Fish | null = null;
     let bestD = Infinity;
-    for (const f of view.fish.query(p.x, p.y, reach)) {
+    for (const f of view.fish.query(p.x, p.y, CONFIG.PRED_VIEW_RANGE)) {
       const d = Math.hypot(f.x - p.x, f.y - p.y);
       if (d >= bestD) continue;
       const bg = view.bg(f.x, f.y);

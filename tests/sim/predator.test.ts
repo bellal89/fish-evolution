@@ -88,16 +88,18 @@ test('well camouflaged fish is spotted only at close range', () => {
   expect(p.state).toBe('chase');
 });
 
-test('sated predator ignores distant fish', () => {
+test('sated predator ignores fish until it is hungry again', () => {
   const ctl = new ScriptedPredator();
-  const far = conspicuousFish(1, 400 + CONFIG.PRED_LAZY_RANGE + 50, 300);
-  const sated = createPredator(400, 300, 0);
-  sated.satiety = 100;
-  ctl.decide(sated, view([far]), new Rng(1));
-  expect(sated.state).toBe('patrol');
-  const hungry = createPredator(400, 300, 0);
-  ctl.decide(hungry, view([far]), new Rng(1));
-  expect(hungry.state).toBe('chase');
+  const front = conspicuousFish(1, 400 + CONFIG.PRED_VIEW_RANGE / 4, 300);
+  const p = createPredator(400, 300, 0);
+  p.satiety = 100;
+  ctl.decide(p, view([front]), new Rng(1));
+  expect(p.state).toBe('patrol');
+  expect(p.targetId).toBeNull();
+  p.satiety = 0;
+  ctl.decide(p, view([front]), new Rng(1));
+  expect(p.state).toBe('chase');
+  expect(p.targetId).toBe(1);
 });
 
 test('chooses the nearest fish and drops a vanished target', () => {

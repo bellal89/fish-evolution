@@ -141,8 +141,6 @@ export const CONFIG = {
   PRED_VIEW_ANGLE: 1.6,
   /** Spotting range for a fully visible fish. */
   PRED_VIEW_RANGE: 350,
-  /** While sated the predator only notices fish this close; 0 = it does not hunt while sated. */
-  PRED_LAZY_RANGE: 0,
   PRED_STAMINA_MAX: 25,
   /** Stamina lost per chasing tick. */
   PRED_STAMINA_DRAIN: 1,

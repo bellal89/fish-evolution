@@ -11,7 +11,7 @@ npm test
 npm run build    # static site in dist/
 ```
 
-Headless run, without the UI (prints stats every 18 000 ticks, then a summary):
+Headless run, without the UI (seed defaults to 1, ticks to 500000; prints stats every 18 000 ticks, then a summary):
 
 ```sh
 npx tsx scripts/headless.ts [seed] [ticks]
