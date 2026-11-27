@@ -193,3 +193,13 @@ test('waste aging can kill, and the fish leaves a body', () => {
   expect(w.fish).toEqual([]);
   expect(w.food.bodies).toHaveLength(1);
 });
+
+test('a fish that dies with nothing left leaves no body', () => {
+  const { w, f } = lonelyFish();
+  // It excreted its gut on the tick its energy ran out.
+  f.energy = 0;
+  f.gut = 0;
+  w.step();
+  expect(w.fish).toEqual([]);
+  expect(w.food.bodies).toEqual([]);
+});

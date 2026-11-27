@@ -285,7 +285,9 @@ export class World {
     const alive: Fish[] = [];
     for (const f of this.fish) {
       if (!isDead(f)) { alive.push(f); continue; }
-      this.food.addBody(f.x, f.y, f.energy + f.gut, f.traits.size, f.heading);
+      // A fish can excrete its gut on the tick its energy runs out; then there is nothing to leave.
+      const left = f.energy + f.gut;
+      if (left > 0) this.food.addBody(f.x, f.y, left, f.traits.size, f.heading);
       this.recordDeath(f);
     }
     this.fish = alive;
