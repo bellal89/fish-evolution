@@ -95,6 +95,9 @@ export interface LeaderRow {
 
 export interface ArenaSnapshot {
   speed: ArenaSpeed;
+  /** Fish per side at the start. */
+  count: number;
+  predators: number;
   choices: [BrainChoice, BrainChoice];
   sides: [ArenaSideView, ArenaSideView];
   /** Oldest first. */
@@ -117,6 +120,8 @@ export type ToWorker =
   /** With a seed, a new start; without, the same start again. */
   | { type: 'arenaRestart'; seed?: number }
   | { type: 'arenaSpeed'; speed: ArenaSpeed }
+  /** Set the fish and predators per side and restart both sides with the same start. */
+  | { type: 'arenaCount'; count: number; predators: number }
   | { type: 'arenaSelect'; side: Side; id: number | null }
   /** Send the main world as a file. */
   | { type: 'export' }

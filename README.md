@@ -33,11 +33,12 @@ npx tsx scripts/headless.ts [seed] [ticks]
 - **Food per fish**: food eaten per fish between samples.
 - **Matings per fish**: matings per fish between samples.
 - **Most common male hue**, **Most common female hue**, **Top pattern**: the most common expressed hue (in 15° steps) over time and the most common pattern now, per sex.
-- **Inspector** (click a fish): sex, age, energy, children, how much waste aged it, both color variants, body and mating genes, and its brain with live activations. The leader tab shows the leader's brain.
+- **Stats** tab: the leader's brain with its living descendants, hidden neurons and links, then the charts.
+- **Fish** tab (click a fish; it opens by itself): sex, age, energy, children, how much waste aged it, both color variants, body and mating genes, and its brain with live activations. Click the empty water or press Esc to close it.
 
 ## Brain arena
 
-Press **Arena** to compare two brains side by side. The arena shows two copies of the tank with the same start: the same food, rocks, fish positions and predator. Each side has 5 fish that share one brain. All arena fish have the same standard body (each body gene at the middle of its range), so only the brain is different. The fish show the colors of the brain's owner. There is no mating in the arena.
+Press **Arena** to compare two brains side by side. The arena shows two copies of the tank with the same start: the same food, rocks, fish positions and predators. Each side has 5 fish that share one brain and 1 predator; change these numbers on the arena bar. All arena fish have the same standard body (each body gene at the middle of its range), so only the brain is different. The fish show the colors of the brain's owner. There is no mating in the arena.
 
 Choose the brain of each side in its list:
 

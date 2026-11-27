@@ -102,7 +102,7 @@ export const CONFIG = {
   /** A dead fish's body sinks this fast, px/tick (3 times the waste). */
   BODY_SINK_SPEED: 1.5,
   /** A body rests this far below the floor line, as a fraction of its size. */
-  BODY_REST_DEPTH: 0.5,
+  BODY_REST_DEPTH: 1.5,
   /** Ticks a body lies on the bottom while it dissolves into the field (10 s). */
   BODY_DISSOLVE_TICKS: 600,
 
@@ -143,7 +143,7 @@ export const CONFIG = {
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
   /** Extra age per tick while a fish touches waste (N). */
-  WASTE_AGE_TICKS: 0.5,
+  WASTE_AGE_TICKS: 0.7,
   /** A dead body ages a fish this many times faster than waste (K). */
   BODY_AGE_MULT: 3,
 
@@ -183,7 +183,7 @@ export const CONFIG = {
 
   // World
   INITIAL_FISH: 150,
-  /** Fish per arena side. */
+  /** Fish per arena side at first; the user can change it. */
   ARENA_FISH: 5,
   /** Energy each initial fish starts with. */
   INITIAL_FISH_ENERGY: 80,

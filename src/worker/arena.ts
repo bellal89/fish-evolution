@@ -1,4 +1,5 @@
 import type { ArenaSideView, ArenaSpeed, BrainChoice, Side } from '../protocol';
+import { CONFIG } from '../sim/config';
 import { arenaTraits, randomBrain, type Brain } from '../sim/arena';
 import { makeSnapshot } from '../sim/snapshot';
 import { World } from '../sim/world';
@@ -12,6 +13,9 @@ export interface ArenaPick {
 /** Two arena worlds with the same start that step in lockstep. */
 export class Arena {
   speed: ArenaSpeed = 1;
+  /** Fish per side. */
+  count: number = CONFIG.ARENA_FISH;
+  predators = 1;
   worlds!: [World, World];
   private brains!: [Brain, Brain];
   private selected: [number | null, number | null] = [null, null];
@@ -36,7 +40,7 @@ export class Arena {
     this.seed = seed;
     const brain = (side: Side): Brain => this.picks[side].brain ?? randomBrain(seed, side);
     this.brains = [brain(0), brain(1)];
-    const world = ({ genome, traits }: Brain) => new World(seed, { genome, traits: arenaTraits(traits) });
+    const world = ({ genome, traits }: Brain) => new World(seed, { genome, traits: arenaTraits(traits), count: this.count, predators: this.predators });
     this.worlds = [world(this.brains[0]), world(this.brains[1])];
     this.selected = [null, null];
   }
@@ -50,13 +54,13 @@ export class Arena {
     for (const w of this.worlds) w.step();
   }
 
-  view(): { speed: ArenaSpeed; choices: [BrainChoice, BrainChoice]; sides: [ArenaSideView, ArenaSideView] } {
+  view(): { speed: ArenaSpeed; count: number; predators: number; choices: [BrainChoice, BrainChoice]; sides: [ArenaSideView, ArenaSideView] } {
     const side = (s: Side): ArenaSideView => {
       const w = this.worlds[s];
       const id = this.selected[s];
       const shown = w.fish.some(f => f.id === id) ? id : (w.fish[0]?.id ?? null);
       return { scene: makeSnapshot(w, shown), foodEaten: w.events.foodEaten, genome: this.brains[s].genome };
     };
-    return { speed: this.speed, choices: [this.picks[0].choice, this.picks[1].choice], sides: [side(0), side(1)] };
+    return { speed: this.speed, count: this.count, predators: this.predators, choices: [this.picks[0].choice, this.picks[1].choice], sides: [side(0), side(1)] };
   }
 }

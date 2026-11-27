@@ -19,10 +19,18 @@ export function mountArena(root: HTMLElement, send: (m: ToWorker) => void): { up
       <button data-act="same" title="Start both sides again from the same start">Same start again</button>
       <button data-act="new" title="New food, fish positions and random brains">New start</button>
       ${SPEEDS.map(s => `<button data-speed>${s === 0 ? '⏸' : `x${s}`}</button>`).join('')}
+      <label title="Fish per side. A change starts both sides again from the same start">fish <input type="number" min="1" max="150" value="${CONFIG.ARENA_FISH}"></label>
+      <label title="Predators per side. A change starts both sides again from the same start">predators <input type="number" min="0" max="10" value="1"></label>
     </div>
     <div class="halves"></div>`;
   root.querySelector<HTMLButtonElement>('[data-act="same"]')!.onclick = () => send({ type: 'arenaRestart' });
   root.querySelector<HTMLButtonElement>('[data-act="new"]')!.onclick = () => send({ type: 'arenaRestart', seed: Date.now() });
+  const [fishInput, predInput] = root.querySelectorAll<HTMLInputElement>('input');
+  fishInput.onchange = predInput.onchange = () => send({
+    type: 'arenaCount',
+    count: Math.max(1, Math.round(fishInput.valueAsNumber) || 1),
+    predators: Math.max(0, Math.round(predInput.valueAsNumber) || 0),
+  });
   const speedButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-speed]')];
   speedButtons.forEach((b, i) => (b.onclick = () => send({ type: 'arenaSpeed', speed: SPEEDS[i] })));
 
@@ -61,7 +69,7 @@ export function mountArena(root: HTMLElement, send: (m: ToWorker) => void): { up
         const alive = scene.fish.length;
         const food = `food ${foodEaten.toFixed(0)}`;
         counters.textContent = alive > 0
-          ? `alive ${alive}/${CONFIG.ARENA_FISH} · ${food} · ${simTime(scene.tick)}`
+          ? `alive ${alive}/${a.count} · ${food} · ${simTime(scene.tick)}`
           : `all died at ${simTime(scene.tick)} · ${food}`;
         drawBrain(brain.getContext('2d')!, genome, scene.selected?.activations);
       },

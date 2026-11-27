@@ -93,9 +93,9 @@ export class World {
 
   /**
    * Creates a new world from a seed, or continues a saved one.
-   * With `arena`, it is one side of the arena: its fish get that brain, and its traits are the arena body.
+   * With `arena`, it is one side of the arena: its `count` fish get that brain, it has `predators` predators, and its traits are the arena body.
    */
-  constructor(from: number | WorldSave, arena?: Brain) {
+  constructor(from: number | WorldSave, arena?: Brain & { count: number; predators: number }) {
     this.arena = arena !== undefined;
     if (typeof from === 'number') {
       const { TANK_W: w, TANK_H: h } = CONFIG;
@@ -104,7 +104,7 @@ export class World {
       this.field = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, w, h);
       this.food = new FoodSystem(this.rng, w, h);
 
-      const count = arena ? CONFIG.ARENA_FISH : CONFIG.INITIAL_FISH;
+      const count = arena ? arena.count : CONFIG.INITIAL_FISH;
       for (let i = 0; i < count; i++) {
         // Arena fish take no random draws for their genes, so the layout does not depend on the brain.
         const traits = arena ? arena.traits : randomTraits(this.rng);
@@ -116,11 +116,13 @@ export class World {
         this.fish.push(f);
         this.lineage.born(f.id, null, genome, traits);
       }
-      this.predators.push(createPredator(
-        this.rng.range(CONFIG.PRED_SIZE, w - CONFIG.PRED_SIZE),
-        this.rng.range(CONFIG.PRED_SIZE, waterH - CONFIG.PRED_SIZE),
-        this.rng.range(-Math.PI, Math.PI),
-      ));
+      for (let i = 0; i < (arena ? arena.predators : 1); i++) {
+        this.predators.push(createPredator(
+          this.rng.range(CONFIG.PRED_SIZE, w - CONFIG.PRED_SIZE),
+          this.rng.range(CONFIG.PRED_SIZE, waterH - CONFIG.PRED_SIZE),
+          this.rng.range(-Math.PI, Math.PI),
+        ));
+      }
 
       // Whatever the fish and the initial algae do not hold starts as fertilizer, spread evenly.
       const fishEnergy = this.fish.length * CONFIG.INITIAL_FISH_ENERGY;
