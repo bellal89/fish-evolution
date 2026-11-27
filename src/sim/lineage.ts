@@ -12,6 +12,14 @@ interface LineageRecord {
   living: number;
 }
 
+/** The leader at one moment, for the arena to pick later. */
+export interface LeaderEntry {
+  tick: number;
+  living: number;
+  genome: Genome;
+  traits: Traits;
+}
+
 /** Tracks how many living descendants each ancestor has, to find the dominant line. */
 export class Lineage {
   private readonly records = new Map<number, LineageRecord>();

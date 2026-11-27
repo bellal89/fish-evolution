@@ -4,7 +4,7 @@ import {
   advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
 } from './fish';
 import { FoodSystem, type AlgaeCell, type Dirt, type Plankton } from './food';
-import { Lineage } from './lineage';
+import { Lineage, type LeaderEntry } from './lineage';
 import { FertilizerField } from './nutrients';
 import { ScriptedPredator, createPredator, stepPredator, type Predator, type PredatorView } from './predator';
 import { canMate, mate, type Egg } from './reproduction';
@@ -58,6 +58,7 @@ export interface WorldSave {
   food: FoodSystem;
   lineage: Lineage;
   tracker: InnovationTracker;
+  leaderHistory: LeaderEntry[];
 }
 
 const revive = <T>(o: T, cls: { prototype: object }): T => Object.setPrototypeOf(o, cls.prototype);
@@ -70,6 +71,8 @@ export class World {
   readonly food: FoodSystem;
   readonly field: FertilizerField;
   readonly lineage = new Lineage();
+  /** The leader every LEADER_SNAPSHOT_TICKS, oldest first. */
+  leaderHistory: LeaderEntry[] = [];
   events = newEvents();
   extinct = false;
 
@@ -116,7 +119,7 @@ export class World {
       this.field.cells.fill(perCell);
     } else {
       ({ tick: this.tick, nextId: this.nextId, extinct: this.extinct, eggs: this.eggs,
-        predators: this.predators, alarms: this.alarms, events: this.events } = from);
+        predators: this.predators, alarms: this.alarms, events: this.events, leaderHistory: this.leaderHistory } = from);
       this.rng = revive(from.rng, Rng);
       this.field = revive(from.field, FertilizerField);
       this.food = revive(from.food, FoodSystem);
@@ -133,9 +136,9 @@ export class World {
   }
 
   save(): WorldSave {
-    const { tick, nextId, extinct, eggs, predators, alarms, events, rng, field, food, lineage, tracker } = this;
+    const { tick, nextId, extinct, eggs, predators, alarms, events, rng, field, food, lineage, tracker, leaderHistory } = this;
     const fish = this.fish.map(({ brain: _, ...f }) => f);
-    return { tick, nextId, extinct, fish, eggs, predators, alarms, events, rng, field, food, lineage, tracker };
+    return { tick, nextId, extinct, fish, eggs, predators, alarms, events, rng, field, food, lineage, tracker, leaderHistory };
   }
 
   totalNutrients(): number {
@@ -158,7 +161,13 @@ export class World {
     this.food.step(this.field, this.rng, this.tick);
     this.field.diffuse(CONFIG.FERT_DIFFUSION);
     this.tick++;
+    if (this.tick % CONFIG.LEADER_SNAPSHOT_TICKS === 0) this.storeLeader();
     this.extinct = this.fish.length === 0 && this.eggs.length === 0;
+  }
+
+  private storeLeader(): void {
+    const lead = this.lineage.leader();
+    if (lead) this.leaderHistory.push({ tick: this.tick, living: lead.living, genome: lead.genome, traits: lead.traits });
   }
 
   private rebuildFishGrid(): void {

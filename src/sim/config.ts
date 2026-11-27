@@ -178,6 +178,8 @@ export const CONFIG = {
   HATCH_TICKS: 100,
   /** Generations of descendants an ancestor's living count covers. */
   LINEAGE_DEPTH: 10,
+  /** Ticks between two snapshots of the leader (5 sim minutes). */
+  LEADER_SNAPSHOT_TICKS: 18_000,
 
   // World
   INITIAL_FISH: 150,
