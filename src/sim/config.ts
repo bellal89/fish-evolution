@@ -191,6 +191,8 @@ export const CONFIG = {
   STATS_EVERY: 300,
   /** History length at which adjacent points are merged. */
   STATS_MAX: 600,
+  /** Sectors of the hue circle for the most common hue (24 sectors of 15°). */
+  HUE_BINS: 24,
 
   // UI
   /** Radius in px for picking a fish with a click. */

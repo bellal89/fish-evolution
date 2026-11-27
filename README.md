@@ -32,5 +32,5 @@ npx tsx scripts/headless.ts [seed] [ticks]
 - **Escapes**: share of predator chases that ended without a kill.
 - **Food per fish**: food eaten per fish between samples.
 - **Matings per fish**: matings per fish between samples.
-- **Male hue**, **Female hue**, **Top pattern**: the average expressed hue over time and the most common pattern now, per sex.
+- **Most common male hue**, **Most common female hue**, **Top pattern**: the most common expressed hue (in 15° steps) over time and the most common pattern now, per sex.
 - **Inspector** (click a fish): sex, age, energy, children, both color variants, body and mating genes, and its brain with live activations. The leader tab shows the leader's brain.

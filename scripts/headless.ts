@@ -34,7 +34,7 @@ while (w.tick < ticks && !w.extinct) {
     console.log(
       `tick ${w.tick} pop ${p.population} M ${p.males} F ${p.females} eggs ${p.eggs}` +
       ` escape ${f2(mean(window, 'escapeRate'))} food ${f2(mean(window, 'foodPerFish'))}` +
-      ` hidden ${f2(p.avgHidden)} hueM ${f2(p.avgHueM)} hueF ${f2(p.avgHueF)}`,
+      ` hidden ${f2(p.avgHidden)} hueM ${f2(p.topHueM)} hueF ${f2(p.topHueF)}`,
     );
     window = [];
   }
