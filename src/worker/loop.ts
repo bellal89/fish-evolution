@@ -1,10 +1,8 @@
-import type { FromWorker, ToWorker } from '../protocol';
+import type { FromWorker, Speed, ToWorker } from '../protocol';
 import { CONFIG } from '../sim/config';
 import { makeSnapshot } from '../sim/snapshot';
 import { Stats } from '../sim/stats';
 import { World } from '../sim/world';
-
-type Speed = Extract<ToWorker, { type: 'speed' }>['speed'];
 
 const TICK_MS = 1000 / CONFIG.TICKS_PER_SEC;
 

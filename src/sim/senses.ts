@@ -114,13 +114,18 @@ function feel(f: SensingFish, mx: number, my: number, speed: number, maxSpeed: n
   lateral[quadrant] += Math.min(1, speed / maxSpeed) * (1 - d / CONFIG.LATERAL_RADIUS);
 }
 
+/** Direction of vision ray i, spread evenly across the view angle. */
+export function rayAngle(heading: number, viewAngle: number, i: number): number {
+  return heading + viewAngle * (i / (RAYS - 1) - 0.5);
+}
+
 /** Fills `out` (length INPUT_COUNT) with the fish's brain inputs. */
 export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): void {
   const { viewRange, viewAngle } = f.traits;
   nearest.fill(Infinity);
   lateral.fill(0);
   for (let i = 0; i < RAYS; i++) {
-    const a = f.heading + viewAngle * (i / (RAYS - 1) - 0.5);
+    const a = rayAngle(f.heading, viewAngle, i);
     rayDx[i] = Math.cos(a);
     rayDy[i] = Math.sin(a);
   }

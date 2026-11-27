@@ -5,7 +5,7 @@ import { mountControls } from './ui/controls';
 import { pickFish } from './ui/pick';
 import { mountInspector } from './ui/inspector';
 import { drawAquarium } from './ui/render';
-import { fitView, screenToWorld } from './ui/view';
+import { fitView, screenToWorld, type View } from './ui/view';
 
 const app = document.getElementById('app')!;
 app.innerHTML = `
@@ -28,10 +28,7 @@ let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
   snap = e.data.snap;
   controls.update(snap);
-  if (snap.stats) {
-    charts.update(snap.stats);
-    inspector.setHistory(snap.stats);
-  }
+  if (snap.stats) charts.update(snap.stats);
   inspector.update(snap);
 };
 
@@ -43,10 +40,12 @@ function resize(): void {
 window.addEventListener('resize', resize);
 resize();
 
+/** Last view drawn by `frame`; clicks map through it. */
+let view: View | null = null;
+
 canvas.addEventListener('click', e => {
-  if (!snap) return;
+  if (!snap || !view) return;
   const dpr = canvas.width / canvas.clientWidth;
-  const view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
   const r = canvas.getBoundingClientRect();
   const p = screenToWorld(view, (e.clientX - r.left) * dpr, (e.clientY - r.top) * dpr);
   send({ type: 'select', id: pickFish(snap.fish, p.x, p.y) });
@@ -57,8 +56,8 @@ window.addEventListener('keydown', e => {
 
 function frame(ms: number): void {
   if (snap) {
-    const view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
-    drawAquarium(ctx, snap, view, ms / 1000, snap.selected);
+    view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
+    drawAquarium(ctx, snap, view, ms / 1000);
   }
   requestAnimationFrame(frame);
 }

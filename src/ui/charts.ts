@@ -1,15 +1,9 @@
 import { CONFIG } from '../sim/config';
-import { patternMarks } from './patterns';
 import type { StatPoint } from '../sim/stats';
-import type { ColorGenes, Pattern } from '../sim/traits';
-
-export interface Line {
-  values: number[];
-  color: string;
-}
+import { drawFishIcon } from './render';
 
 /** One small line chart; all lines share the y range (from 0 for non-negative data). */
-export function sparkline(canvas: HTMLCanvasElement, lines: Line[]): void {
+function sparkline(canvas: HTMLCanvasElement, lines: { values: number[]; color: string }[]): void {
   const ctx = canvas.getContext('2d')!;
   const { width: W, height: H } = canvas;
   ctx.clearRect(0, 0, W, H);
@@ -31,41 +25,22 @@ export function sparkline(canvas: HTMLCanvasElement, lines: Line[]): void {
   }
 }
 
-/** A tiny fish body with the pattern, for swatches and the top-pattern rows. */
-export function drawFishIcon(canvas: HTMLCanvasElement, c: ColorGenes): void {
-  const ctx = canvas.getContext('2d')!;
-  const { width: W, height: H } = canvas;
-  ctx.clearRect(0, 0, W, H);
-  const hl = W * 0.42, hh = H * 0.34;
-  ctx.save();
-  ctx.translate(W / 2, H / 2);
-  ctx.beginPath();
-  ctx.ellipse(0, 0, hl, hh, 0, 0, Math.PI * 2);
-  ctx.fillStyle = `hsl(${c.hue * 360}, ${20 + 70 * c.brightness}%, ${32 + 26 * c.brightness}%)`;
-  ctx.fill();
-  ctx.clip();
-  ctx.fillStyle = `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
-  for (const m of patternMarks(c, 1, hl, hh)) {
-    ctx.beginPath();
-    if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
-    else ctx.rect(m.x - m.w, m.y - m.h, m.w * 2, m.h * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-}
-
-type Num = (p: StatPoint) => number;
-
 interface Row {
   title: string;
   /** Lines to draw; the last value of each is shown as text. */
-  lines: { name: string; get: Num; color: string }[];
-  fmt?: (v: number) => string;
+  lines: { name: string; get: (p: StatPoint) => number; color: string }[];
+  fmt: (v: number) => string;
 }
 
 const f1 = (v: number): string => v.toFixed(1);
+const int = (v: number): string => String(Math.round(v));
 const pct = (v: number): string => `${Math.round(v * 100)}%`;
-const secs = (v: number): string => `${Math.round(v / CONFIG.TICKS_PER_SEC)}s`;
+/** Ticks as whole seconds. */
+export const secs = (ticks: number): string => `${Math.round(ticks / CONFIG.TICKS_PER_SEC)}s`;
+
+/** A row with a single unnamed line. */
+const one = (title: string, get: (p: StatPoint) => number, color: string, fmt = f1): Row =>
+  ({ title, lines: [{ name: '', get, color }], fmt });
 
 const ROWS: Row[] = [
   {
@@ -75,13 +50,13 @@ const ROWS: Row[] = [
       { name: 'M', get: p => p.males, color: '#6ab0ff' },
       { name: 'F', get: p => p.females, color: '#ff8ac0' },
     ],
-    fmt: v => String(Math.round(v)),
+    fmt: int,
   },
-  { title: 'Eggs', lines: [{ name: '', get: p => p.eggs, color: '#f5e6a0' }], fmt: v => String(Math.round(v)) },
-  { title: 'Avg lifespan', lines: [{ name: '', get: p => p.avgLifespan, color: '#b8e0a0' }], fmt: secs },
-  { title: 'Offspring per fish', lines: [{ name: '', get: p => p.avgChildren, color: '#e0b0ff' }], fmt: f1 },
-  { title: 'Size', lines: [{ name: '', get: p => p.avgSize, color: '#9ad' }], fmt: f1 },
-  { title: 'Speed', lines: [{ name: '', get: p => p.avgSpeed, color: '#fc8' }], fmt: f1 },
+  one('Eggs', p => p.eggs, '#f5e6a0', int),
+  one('Avg lifespan', p => p.avgLifespan, '#b8e0a0', secs),
+  one('Offspring per fish', p => p.avgChildren, '#e0b0ff'),
+  one('Size', p => p.avgSize, '#9ad'),
+  one('Speed', p => p.avgSpeed, '#fc8'),
   {
     title: 'Hidden neurons',
     lines: [
@@ -98,14 +73,19 @@ const ROWS: Row[] = [
     ],
     fmt: f1,
   },
-  { title: 'Escapes', lines: [{ name: '', get: p => p.escapeRate, color: '#f88' }], fmt: pct },
-  { title: 'Food per fish', lines: [{ name: '', get: p => p.foodPerFish, color: '#8d8' }], fmt: v => v.toFixed(2) },
-  { title: 'Matings per fish', lines: [{ name: '', get: p => p.matingsPerFish, color: '#f9c' }], fmt: v => v.toFixed(2) },
+  one('Escapes', p => p.escapeRate, '#f88', pct),
+  one('Food per fish', p => p.foodPerFish, '#8d8', v => v.toFixed(2)),
+  one('Matings per fish', p => p.matingsPerFish, '#f9c', v => v.toFixed(2)),
 ];
 
-const SPARK_W = 220, SPARK_H = 36;
+const SEXES = [
+  { sym: '♂', title: 'Male hue', hue: (p: StatPoint) => p.avgHueM, pat: (p: StatPoint) => p.topPatternM },
+  { sym: '♀', title: 'Female hue', hue: (p: StatPoint) => p.avgHueF, pat: (p: StatPoint) => p.topPatternF },
+];
 
-function makeCanvas(w: number, h: number): HTMLCanvasElement {
+const SPARK_W = 420, SPARK_H = 36;
+
+export function makeCanvas(w: number, h: number): HTMLCanvasElement {
   const c = document.createElement('canvas');
   c.width = w;
   c.height = h;
@@ -116,7 +96,7 @@ function makeCanvas(w: number, h: number): HTMLCanvasElement {
 function drawHueStrip(canvas: HTMLCanvasElement, hues: number[]): void {
   const ctx = canvas.getContext('2d')!;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const w = canvas.width / Math.max(hues.length, 1);
+  const w = canvas.width / hues.length;
   hues.forEach((h, i) => {
     ctx.fillStyle = `hsl(${h * 360}, 70%, 50%)`;
     ctx.fillRect(Math.floor(i * w), 0, Math.ceil(w), canvas.height);
@@ -125,70 +105,61 @@ function drawHueStrip(canvas: HTMLCanvasElement, hues: number[]): void {
 
 export function mountCharts(root: HTMLElement): { update(history: StatPoint[]): void } {
   root.innerHTML = '';
-  const rows = ROWS.map(row => {
+  /** Appends a titled row; returns the span for its value text. */
+  function addRow(title: string, body: HTMLElement): HTMLElement {
     const el = document.createElement('div');
     el.className = 'chart-row';
     const head = document.createElement('div');
     head.className = 'chart-head';
-    const title = document.createElement('span');
-    title.textContent = row.title;
+    const name = document.createElement('span');
+    name.textContent = title;
     const value = document.createElement('span');
     value.className = 'chart-val';
-    head.append(title, value);
-    const canvas = makeCanvas(SPARK_W, SPARK_H);
-    el.append(head, canvas);
+    head.append(name, value);
+    el.append(head, body);
     root.append(el);
-    return { row, canvas, value };
+    return value;
+  }
+
+  const rows = ROWS.map(row => {
+    const canvas = makeCanvas(SPARK_W, SPARK_H);
+    return { row, canvas, value: addRow(row.title, canvas) };
   });
 
-  const hueRows = (['M', 'F'] as const).map(sex => {
-    const el = document.createElement('div');
-    el.className = 'chart-row';
-    const head = document.createElement('div');
-    head.className = 'chart-head';
-    head.textContent = sex === 'M' ? 'Male hue' : 'Female hue';
+  const hueRows = SEXES.map(sex => {
     const canvas = makeCanvas(SPARK_W, 12);
-    el.append(head, canvas);
-    root.append(el);
+    addRow(sex.title, canvas);
     return { sex, canvas };
   });
 
-  const patRow = document.createElement('div');
-  patRow.className = 'chart-row';
-  const patHead = document.createElement('div');
-  patHead.className = 'chart-head';
-  patHead.textContent = 'Top pattern';
   const patBody = document.createElement('div');
   patBody.className = 'pattern-line';
-  const patIcons = (['M', 'F'] as const).map(sex => {
+  const patIcons = SEXES.map(sex => {
     const icon = makeCanvas(40, 20);
     const label = document.createElement('span');
-    patBody.append(sex === 'M' ? '♂ ' : '♀ ', icon, label);
+    patBody.append(`${sex.sym} `, icon, label);
     return { sex, icon, label };
   });
-  patRow.append(patHead, patBody);
-  root.append(patRow);
-
-  const iconColor = (hue: number, pattern: Pattern): ColorGenes =>
-    ({ hue, brightness: 0.6, pattern, patternCount: 3, hue2: (hue + 0.5) % 1 });
+  addRow('Top pattern', patBody);
 
   return {
     update(history) {
-      if (history.length === 0) return;
-      const last = history[history.length - 1];
+      const last = history.at(-1);
       for (const { row, canvas, value } of rows) {
         sparkline(canvas, row.lines.map(l => ({ values: history.map(l.get), color: l.color })));
-        value.textContent = row.lines
-          .map(l => `${l.name ? l.name + ' ' : ''}${(row.fmt ?? f1)(l.get(last))}`)
-          .join(' · ');
+        value.textContent = last
+          ? row.lines.map(l => `${l.name ? l.name + ' ' : ''}${row.fmt(l.get(last))}`).join(' · ')
+          : '';
       }
-      for (const { sex, canvas } of hueRows) {
-        drawHueStrip(canvas, history.map(p => (sex === 'M' ? p.avgHueM : p.avgHueF)));
-      }
+      for (const { sex, canvas } of hueRows) drawHueStrip(canvas, history.map(sex.hue));
       for (const { sex, icon, label } of patIcons) {
-        const pattern = sex === 'M' ? last.topPatternM : last.topPatternF;
-        label.textContent = pattern;
-        drawFishIcon(icon, iconColor(sex === 'M' ? last.avgHueM : last.avgHueF, pattern));
+        label.textContent = last ? sex.pat(last) : '';
+        if (last) {
+          const hue = sex.hue(last);
+          drawFishIcon(icon, { hue, brightness: 0.6, pattern: sex.pat(last), patternCount: 3, hue2: (hue + 0.5) % 1 });
+        } else {
+          icon.getContext('2d')!.clearRect(0, 0, icon.width, icon.height);
+        }
       }
     },
   };

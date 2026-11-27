@@ -1,6 +1,7 @@
 import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
-import type { FishView, PredatorSnap, Rock, SceneView, SelectedFish } from '../protocol';
+import { rayAngle } from '../sim/senses';
+import type { FishView, PredatorSnap, Rock, SelectedFish, Snapshot } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
 
@@ -18,7 +19,35 @@ function fishPatternColor(c: ColorGenes): string {
   return `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
 }
 
-export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time, selected: SelectedFish | null = null): void {
+/** Pattern marks of fish `id` in the current fill style, for a body of half-length hl and half-height hh. */
+function fillMarks(ctx: CanvasRenderingContext2D, c: ColorGenes, id: number, hl: number, hh: number): void {
+  for (const m of patternMarks(c, id, hl, hh)) {
+    ctx.beginPath();
+    if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
+    else ctx.rect(m.x - m.w, m.y - m.h, m.w * 2, m.h * 2);
+    ctx.fill();
+  }
+}
+
+/** A tiny fish body with the pattern, for swatches and the top-pattern rows. */
+export function drawFishIcon(canvas: HTMLCanvasElement, c: ColorGenes): void {
+  const ctx = canvas.getContext('2d')!;
+  const { width: W, height: H } = canvas;
+  ctx.clearRect(0, 0, W, H);
+  const hl = W * 0.42, hh = H * 0.34;
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, hl, hh, 0, 0, Math.PI * 2);
+  ctx.fillStyle = fishBodyColor(c);
+  ctx.fill();
+  ctx.clip();
+  ctx.fillStyle = fishPatternColor(c);
+  fillMarks(ctx, c, 1, hl, hh);
+  ctx.restore();
+}
+
+export function drawAquarium(ctx: CanvasRenderingContext2D, scene: Snapshot, view: View, t: Time): void {
   const { tankW: W, tankH: H } = scene;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -37,7 +66,7 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, vi
   drawParticles(ctx, scene);
   for (const f of scene.fish) drawFish(ctx, f, t);
   for (const p of scene.predators) drawPredator(ctx, p, t);
-  if (selected) drawSelection(ctx, scene, selected);
+  if (scene.selected) drawSelection(ctx, scene, scene.selected);
 
   ctx.restore();
 }
@@ -115,7 +144,7 @@ function drawAlgae(ctx: CanvasRenderingContext2D, x: number, y: number, biomass:
   }
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, scene: SceneView): void {
+function drawParticles(ctx: CanvasRenderingContext2D, scene: Snapshot): void {
   ctx.fillStyle = 'rgba(170,255,160,0.75)';
   for (const p of scene.food.plankton) {
     ctx.beginPath();
@@ -210,12 +239,7 @@ function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): void {
   bodyPath(ctx, hl, hh);
   ctx.clip();
   ctx.fillStyle = accent;
-  for (const m of patternMarks(c, f.id, hl, hh)) {
-    ctx.beginPath();
-    if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
-    else ctx.rect(m.x - m.w, m.y - m.h, m.w * 2, m.h * 2);
-    ctx.fill();
-  }
+  fillMarks(ctx, c, f.id, hl, hh);
   // Soft belly highlight for volume.
   const g = ctx.createLinearGradient(0, -hh, 0, hh);
   g.addColorStop(0, 'rgba(0,0,0,0.18)');
@@ -325,18 +349,16 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
   ctx.restore();
 }
 
-/** Vision rays (same angle formula as the senses) and a ring around the selected fish. */
-function drawSelection(ctx: CanvasRenderingContext2D, scene: SceneView, sel: SelectedFish): void {
-  const f = scene.fish.find(x => x.id === sel.id);
-  if (!f) return;
+/** Vision rays and a ring around the selected fish. */
+function drawSelection(ctx: CanvasRenderingContext2D, scene: Snapshot, sel: SelectedFish): void {
+  const f = scene.fish.find(x => x.id === sel.id)!;
   const { viewAngle, viewRange } = sel.traits;
-  const n = CONFIG.RAY_COUNT;
   ctx.save();
   ctx.lineWidth = 1.5;
-  for (let i = 0; i < n; i++) {
-    const a = f.heading + viewAngle * (i / (n - 1) - 0.5);
-    const hit = Math.max(sel.inputs[3 * i] ?? 0, sel.inputs[3 * i + 1] ?? 0, sel.inputs[3 * i + 2] ?? 0);
-    ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.7 * Math.min(1, hit)})`;
+  for (let i = 0; i < CONFIG.RAY_COUNT; i++) {
+    const a = rayAngle(f.heading, viewAngle, i);
+    const hit = Math.max(...sel.inputs.slice(3 * i, 3 * i + 3));
+    ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.7 * hit})`;
     ctx.beginPath();
     ctx.moveTo(f.x, f.y);
     ctx.lineTo(f.x + Math.cos(a) * viewRange, f.y + Math.sin(a) * viewRange);

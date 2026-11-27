@@ -1,25 +1,13 @@
 import type { Snapshot } from '../protocol';
-import { CONFIG } from '../sim/config';
-import { INPUT_LABELS } from '../sim/senses';
-import type { StatPoint } from '../sim/stats';
 import { expressedColor } from '../sim/traits';
 import { drawBrain } from './brainView';
-import { drawFishIcon, sparkline } from './charts';
+import { makeCanvas, secs } from './charts';
+import { drawFishIcon } from './render';
 
-function brainCanvas(): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = 420;
-  c.height = 340;
-  c.className = 'brain';
-  return c;
-}
-
-export interface Inspector {
+interface Inspector {
   update(snap: Snapshot): void;
   /** Tell the inspector which fish the UI asked for (null = none). Clears "Fish died". */
   setWanted(id: number | null): void;
-  /** Stats history for the leader tab's sparkline; call only when it changed. */
-  setHistory(history: StatPoint[]): void;
 }
 
 export function mountInspector(root: HTMLElement): Inspector {
@@ -36,7 +24,6 @@ export function mountInspector(root: HTMLElement): Inspector {
     </div>
     <div id="tab-leader" hidden>
       <div id="leader-info" class="msg">No leader yet</div>
-      <div class="chart-head"><span>Brain size: avg vs leader</span></div>
     </div>`;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
   const fishTab = root.querySelector<HTMLElement>('#tab-fish')!;
@@ -49,18 +36,15 @@ export function mountInspector(root: HTMLElement): Inspector {
   const genes = root.querySelector<HTMLElement>('#fish-genes')!;
   const leaderInfo = root.querySelector<HTMLElement>('#leader-info')!;
 
-  const fishBrain = brainCanvas();
+  const fishBrain = makeCanvas(420, 340);
+  fishBrain.className = 'brain';
   body.append(fishBrain);
-  const leaderBrain = brainCanvas();
-  const sizeSpark = document.createElement('canvas');
-  sizeSpark.width = 220;
-  sizeSpark.height = 36;
-  leaderTab.append(sizeSpark, leaderBrain);
+  const leaderBrain = makeCanvas(420, 340);
+  leaderBrain.className = 'brain';
+  leaderTab.append(leaderBrain);
 
   const swatchCanvases = [0, 1].map(() => {
-    const c = document.createElement('canvas');
-    c.width = 56;
-    c.height = 28;
+    const c = makeCanvas(56, 28);
     const label = document.createElement('div');
     const cell = document.createElement('div');
     cell.append(c, label);
@@ -68,52 +52,36 @@ export function mountInspector(root: HTMLElement): Inspector {
     return { c, label, cell };
   });
 
-  let tab: 'fish' | 'leader' = 'fish';
   tabs.forEach(b => {
     b.onclick = () => {
-      tab = b.dataset.tab as 'fish' | 'leader';
       tabs.forEach(t => t.classList.toggle('active', t === b));
-      fishTab.hidden = tab !== 'fish';
-      leaderTab.hidden = tab !== 'leader';
+      fishTab.hidden = b.dataset.tab !== 'fish';
+      leaderTab.hidden = b.dataset.tab !== 'leader';
     };
   });
 
   let wanted: number | null = null;
-  let gotFish = false;
-  let died = false;
-  let history: StatPoint[] = [];
-
-  function drawSizeSpark(): void {
-    sparkline(sizeSpark, [
-      { values: history.map(p => p.avgHidden + p.avgConns), color: '#9ad' },
-      { values: history.map(p => p.leaderHidden + p.leaderConns), color: '#fc6' },
-    ]);
-  }
+  /** The wanted fish has appeared in a snapshot, so its absence means it died. */
+  let seen = false;
 
   return {
     setWanted(id) {
       wanted = id;
-      gotFish = false;
-      died = false;
-    },
-    setHistory(h) {
-      history = h;
-      drawSizeSpark();
+      seen = false;
     },
     update(snap) {
       const sel = snap.selected;
-      if (sel && sel.id === wanted) gotFish = true;
-      if (!sel && gotFish) { died = true; gotFish = false; }
       const show = !!sel && sel.id === wanted;
+      if (show) seen = true;
 
       body.hidden = !show;
       msg.hidden = show;
-      msg.textContent = died ? 'Fish died' : 'Click a fish to inspect it';
+      msg.textContent = seen ? 'Fish died' : 'Click a fish to inspect it';
 
-      if (show && sel && tab === 'fish') {
+      if (show && sel && !fishTab.hidden) {
         const t = sel.traits;
         info.textContent =
-          `${sel.sex === 'M' ? '♂ male' : '♀ female'} · age ${Math.round(sel.age / CONFIG.TICKS_PER_SEC)}s · ` +
+          `${sel.sex === 'M' ? '♂ male' : '♀ female'} · age ${secs(sel.age)} · ` +
           `energy ${sel.energy.toFixed(0)} · children ${sel.children}`;
         fill.style.width = `${Math.min(100, (sel.energy / (t.mateThreshold * 1.5)) * 100)}%`;
         const shown = expressedColor(t, sel.sex);
@@ -126,15 +94,15 @@ export function mountInspector(root: HTMLElement): Inspector {
         genes.textContent =
           `size ${t.size.toFixed(1)} · speed ${t.maxSpeed.toFixed(1)} · view ${Math.round((t.viewAngle * 180) / Math.PI)}° / ${Math.round(t.viewRange)} · ` +
           `mate at ${t.mateThreshold.toFixed(0)} · invest ${Math.round(t.investFraction * 100)}% · ` +
-          `lifespan ${Math.round(t.lifespanTicks / CONFIG.TICKS_PER_SEC)}s · ` +
+          `lifespan ${secs(t.lifespanTicks)} · ` +
           `prefers hue ${Math.round(t.prefHue * 360)}° ${t.prefPattern} · choosiness ${t.choosiness.toFixed(2)}`;
-        drawBrain(fishBrain.getContext('2d')!, sel.genome, sel.activations, INPUT_LABELS);
+        drawBrain(fishBrain.getContext('2d')!, sel.genome, sel.activations);
       }
 
-      if (tab === 'leader') {
+      if (!leaderTab.hidden) {
         if (snap.leader) {
           leaderInfo.textContent = `Living descendants: ${snap.leader.living}`;
-          drawBrain(leaderBrain.getContext('2d')!, snap.leader.genome, undefined, INPUT_LABELS);
+          drawBrain(leaderBrain.getContext('2d')!, snap.leader.genome);
         } else {
           leaderInfo.textContent = 'No leader yet';
         }

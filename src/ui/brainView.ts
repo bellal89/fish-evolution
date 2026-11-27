@@ -1,6 +1,7 @@
 import type { Genome } from '../neat/genome';
+import { INPUT_LABELS } from '../sim/senses';
 
-export interface Pos {
+interface Pos {
   x: number;
   y: number;
 }
@@ -13,19 +14,18 @@ export function layoutBrain(g: Genome): Map<number, Pos> {
 
   const depth = new Map<number, number>();
   for (const n of hidden) depth.set(n.id, 1);
-  // Relax longest paths; the pass limit also stops cycles from looping forever.
-  for (let pass = 0; pass < hidden.length; pass++) {
-    let changed = false;
+  let changed: boolean;
+  do {
+    changed = false;
     for (const c of g.conns) {
       if (!c.enabled || !depth.has(c.to)) continue;
       const d = (depth.get(c.from) ?? 0) + 1;
-      if (d > depth.get(c.to)! && d <= hidden.length) {
+      if (d > depth.get(c.to)!) {
         depth.set(c.to, d);
         changed = true;
       }
     }
-    if (!changed) break;
-  }
+  } while (changed);
   const maxDepth = Math.max(1, ...depth.values());
 
   const columns = new Map<number, number[]>();
@@ -51,12 +51,7 @@ const PAD_Y = 8;
 const OUT_LABELS = ['turn', 'thrust', 'mate'];
 
 /** Draws into the whole canvas. Edges colored by weight sign; nodes filled by activation (-1..1). */
-export function drawBrain(
-  ctx: CanvasRenderingContext2D,
-  g: Genome,
-  activations?: Map<number, number>,
-  labels: string[] = [],
-): void {
+export function drawBrain(ctx: CanvasRenderingContext2D, g: Genome, activations?: Map<number, number>): void {
   const { width: W, height: H } = ctx.canvas;
   ctx.clearRect(0, 0, W, H);
   const pos = layoutBrain(g);
@@ -65,8 +60,7 @@ export function drawBrain(
 
   for (const c of g.conns) {
     if (!c.enabled) continue;
-    const a = pos.get(c.from), b = pos.get(c.to);
-    if (!a || !b) continue;
+    const a = pos.get(c.from)!, b = pos.get(c.to)!;
     ctx.strokeStyle = c.weight >= 0 ? 'rgba(90,200,120,0.55)' : 'rgba(230,90,90,0.55)';
     ctx.lineWidth = Math.min(4, 0.4 + Math.abs(c.weight));
     ctx.beginPath();
@@ -77,7 +71,7 @@ export function drawBrain(
 
   const inputs = g.nodes.filter(n => n.kind === 'input');
   const outputs = g.nodes.filter(n => n.kind === 'output');
-  const r = Math.max(2.5, Math.min(6, (H / Math.max(inputs.length + 1, 1)) * 0.35));
+  const r = Math.max(2.5, Math.min(6, (H / (inputs.length + 1)) * 0.35));
   ctx.font = '9px system-ui, sans-serif';
   ctx.textBaseline = 'middle';
   for (const n of g.nodes) {
@@ -96,15 +90,12 @@ export function drawBrain(
     ctx.stroke();
 
     ctx.fillStyle = '#cde';
-    if (n.kind === 'input') {
+    if (n.kind === 'input' || n.kind === 'bias') {
       ctx.textAlign = 'right';
-      ctx.fillText(labels[n.id] ?? '', px(p) - r - 3, py(p));
-    } else if (n.kind === 'bias') {
-      ctx.textAlign = 'right';
-      ctx.fillText('bias', px(p) - r - 3, py(p));
+      ctx.fillText(n.kind === 'bias' ? 'bias' : INPUT_LABELS[n.id], px(p) - r - 3, py(p));
     } else if (n.kind === 'output') {
       ctx.textAlign = 'left';
-      ctx.fillText(OUT_LABELS[outputs.indexOf(n)] ?? '', px(p) + r + 3, py(p));
+      ctx.fillText(OUT_LABELS[outputs.indexOf(n)], px(p) + r + 3, py(p));
     }
   }
 }

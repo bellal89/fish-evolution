@@ -32,13 +32,19 @@ export interface FoodView {
   eggs: { x: number; y: number }[];
 }
 
-export interface SceneView {
+export interface Snapshot {
   tankW: number;
   tankH: number;
   rocks: Rock[];
   fish: FishView[];
   predators: PredatorSnap[];
   food: FoodView;
+  tick: number;
+  extinct: boolean;
+  selected: SelectedFish | null;
+  leader: { genome: Genome; living: number } | null;
+  /** Only when changed. */
+  stats?: StatPoint[];
 }
 
 export interface SelectedFish {
@@ -54,17 +60,10 @@ export interface SelectedFish {
   activations: Map<number, number>;
 }
 
-export interface Snapshot extends SceneView {
-  tick: number;
-  extinct: boolean;
-  selected: SelectedFish | null;
-  leader: { genome: Genome; living: number } | null;
-  /** Only when changed. */
-  stats?: StatPoint[];
-}
+export type Speed = 0 | 1 | 10 | 50 | 'max';
 
 export type ToWorker =
-  | { type: 'speed'; speed: 0 | 1 | 10 | 50 | 'max' }
+  | { type: 'speed'; speed: Speed }
   | { type: 'select'; id: number | null }
   | { type: 'reset'; seed: number };
 

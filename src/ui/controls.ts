@@ -1,14 +1,7 @@
-import type { Snapshot, ToWorker } from '../protocol';
+import type { Snapshot, Speed, ToWorker } from '../protocol';
 import { CONFIG } from '../sim/config';
 
-type Speed = 0 | 1 | 10 | 50 | 'max';
-
-const SPEEDS: { label: string; speed: Speed }[] = [
-  { label: 'x1', speed: 1 },
-  { label: 'x10', speed: 10 },
-  { label: 'x50', speed: 50 },
-  { label: 'max', speed: 'max' },
-];
+const SPEEDS = [1, 10, 50, 'max'] as const;
 
 function simTime(tick: number): string {
   const s = Math.floor(tick / CONFIG.TICKS_PER_SEC);
@@ -22,15 +15,15 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   root.innerHTML = `
     <button data-act="pause">⏸</button>
     <button data-act="play">▶</button>
-    ${SPEEDS.map(s => `<button data-speed="${s.speed}">${s.label}</button>`).join('')}
+    ${SPEEDS.map(s => `<button data-speed>${s === 'max' ? s : `x${s}`}</button>`).join('')}
     <span id="info"></span>
     <div id="extinct" hidden><div>Population extinct</div><button id="restart">Start over</button></div>
   `;
   const info = root.querySelector<HTMLElement>('#info')!;
   const overlay = root.querySelector<HTMLElement>('#extinct')!;
-  const speedButtons = [...root.querySelectorAll<HTMLButtonElement>('button[data-speed]')];
   const pauseBtn = root.querySelector<HTMLButtonElement>('[data-act="pause"]')!;
   const playBtn = root.querySelector<HTMLButtonElement>('[data-act="play"]')!;
+  const speedButtons = [...root.querySelectorAll<HTMLButtonElement>('button[data-speed]')];
 
   function setSpeed(s: Speed): void {
     speed = s;
@@ -41,14 +34,12 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   function highlight(): void {
     pauseBtn.classList.toggle('active', speed === 0);
     playBtn.classList.toggle('active', speed !== 0);
-    for (const b of speedButtons) b.classList.toggle('active', b.dataset.speed === String(speed));
+    speedButtons.forEach((b, i) => b.classList.toggle('active', SPEEDS[i] === speed));
   }
 
   pauseBtn.onclick = () => setSpeed(0);
   playBtn.onclick = () => setSpeed(lastRunning);
-  for (const b of speedButtons) {
-    b.onclick = () => setSpeed(b.dataset.speed === 'max' ? 'max' : (Number(b.dataset.speed) as Speed));
-  }
+  speedButtons.forEach((b, i) => (b.onclick = () => setSpeed(SPEEDS[i])));
   root.querySelector<HTMLButtonElement>('#restart')!.onclick = () => {
     send({ type: 'reset', seed: Date.now() });
     setSpeed(1);
