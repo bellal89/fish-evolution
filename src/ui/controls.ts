@@ -18,7 +18,9 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   root.innerHTML = `
     <button data-act="pause">⏸</button>
     <button data-act="play">▶</button>
-    ${SPEEDS.map(s => `<button data-speed>${s === 'max' ? s : `x${s}`}</button>`).join('')}
+    ${SPEEDS.map(s => s === 'max'
+      ? '<button data-speed title="As fast as this computer can run the simulation">max</button>'
+      : `<button data-speed>x${s}</button>`).join('')}
     <span id="info"></span>
     <div id="extinct" hidden><div>Population extinct</div><button id="restart">Start over</button></div>
   `;
