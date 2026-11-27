@@ -143,7 +143,7 @@ export const CONFIG = {
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
   /** Extra age per tick while a fish touches waste (N). */
-  WASTE_AGE_TICKS: 1,
+  WASTE_AGE_TICKS: 0.5,
   /** A dead body ages a fish this many times faster than waste (K). */
   BODY_AGE_MULT: 3,
 
@@ -186,9 +186,9 @@ export const CONFIG = {
   /** All nutrients in the tank. */
   TOTAL_NUTRIENTS: 18000,
   /** Most algae biomass one bite takes: a full cell lasts ALGAE_MAX / BITE bites. */
-  BITE: 1,
+  BITE: 2,
   /** Ticks between two algae bites of one fish. */
-  BITE_COOLDOWN: 30,
+  BITE_COOLDOWN: 5,
   /** A fish touches food within its size plus this. */
   EAT_REACH: 4,
   /** Ticks a predator stays sated after eating a fish. */

@@ -12,11 +12,11 @@ test('world fingerprint after 2000 ticks of seed 7', () => {
     se += f.energy;
     for (const o of f.lastOutputs) so += o;
   }
-  expect(w.fish.length).toBe(155);
-  expect(w.events.matings).toBe(8);
-  expect(w.events.foodEaten).toBe(3746.4437454422505);
-  expect(sx).toBe(113357.6228902452);
-  expect(sy).toBe(71360.54049230443);
-  expect(se).toBe(8799.507077729751);
-  expect(so).toBe(-60.18965735733218);
+  expect(w.fish.length).toBe(161);
+  expect(w.events.matings).toBe(15);
+  expect(w.events.foodEaten).toBe(5019.940221496154);
+  expect(sx).toBe(117527.26403115553);
+  expect(sy).toBe(72208.7382326571);
+  expect(se).toBe(9742.283900036255);
+  expect(so).toBe(-22.54198286216706);
 }, 30_000);
