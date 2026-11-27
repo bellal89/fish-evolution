@@ -31,15 +31,15 @@ function makeCtx(
   food: Food[] = [],
   predators: SensingPredator[] = [],
   bg = { hue: 0.5, brightness: 0.5 },
-  waste: Food[] = [],
+  dirt: Food[] = [],
 ): SenseContext {
   const fg = new SpatialGrid<SensingFish>(100, W, H);
   fish.forEach((f) => fg.insert(f));
   const foodGrid = new SpatialGrid<Food>(100, W, H);
   food.forEach((f) => foodGrid.insert(f));
-  const wasteGrid = new SpatialGrid<Food>(100, W, H);
-  waste.forEach((f) => wasteGrid.insert(f));
-  return { food: foodGrid, waste: wasteGrid, fish: fg, predators, alarms: [], tick: 0, bg: () => bg, tankW: W, tankH: H };
+  const dirtGrid = new SpatialGrid<Food>(100, W, H);
+  dirt.forEach((f) => dirtGrid.insert(f));
+  return { food: foodGrid, dirt: dirtGrid, fish: fg, predators, alarms: [], tick: 0, bg: () => bg, tankW: W, tankH: H };
 }
 
 function run(f: SensingFish, ctx: SenseContext): Float32Array {

@@ -11,7 +11,7 @@ export type SensingPredator = Pick<Predator, 'x' | 'y' | 'speed' | 'maxSpeed' | 
 export interface SenseContext {
   food: SpatialGrid<{ x: number; y: number; amount: number }>;
   /** Waste and dead bodies. */
-  waste: SpatialGrid<{ x: number; y: number; amount: number }>;
+  dirt: SpatialGrid<{ x: number; y: number; amount: number }>;
   fish: SpatialGrid<SensingFish>;
   predators: SensingPredator[];
   alarms: { x: number; y: number; tick: number }[];
@@ -179,7 +179,7 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
   out[IN_SMELL] = (left - right) / (left + right + CONFIG.SMELL_EPS);
 
   let wasteLeft = 0, wasteRight = 0;
-  for (const p of ctx.waste.query(f.x, f.y, smellR)) {
+  for (const p of ctx.dirt.query(f.x, f.y, smellR)) {
     wasteLeft += smellOf(p, lx, ly);
     wasteRight += smellOf(p, rx, ry);
   }

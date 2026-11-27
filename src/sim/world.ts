@@ -126,7 +126,7 @@ export class World {
     }
 
     this.senseCtx = {
-      food: this.foodGrid, waste: this.dirtGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
+      food: this.foodGrid, dirt: this.dirtGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
       tick: 0, bg, tankW: CONFIG.TANK_W, tankH: CONFIG.TANK_H,
     };
     this.predView = { fish: this.fishGrid, eggs: this.eggs, bg };
