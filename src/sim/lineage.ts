@@ -1,9 +1,11 @@
 import type { Genome } from '../neat/genome';
 import { CONFIG } from './config';
+import type { Traits } from './traits';
 
 interface LineageRecord {
   id: number;
   genome: Genome;
+  traits: Traits;
   parents: [number, number] | null;
   alive: boolean;
   /** Living descendants within LINEAGE_DEPTH generations. */
@@ -14,8 +16,8 @@ interface LineageRecord {
 export class Lineage {
   private readonly records = new Map<number, LineageRecord>();
 
-  born(id: number, parents: [number, number] | null, genome: Genome): void {
-    this.records.set(id, { id, genome, parents, alive: true, living: 0 });
+  born(id: number, parents: [number, number] | null, genome: Genome, traits: Traits): void {
+    this.records.set(id, { id, genome, traits, parents, alive: true, living: 0 });
     for (const a of this.ancestors(id)) a.living += 1;
   }
 
@@ -35,13 +37,13 @@ export class Lineage {
   }
 
   /** Record with the most living descendants (ties: lowest id), or null. */
-  leader(): { id: number; genome: Genome; living: number } | null {
+  leader(): { id: number; genome: Genome; traits: Traits; living: number } | null {
     let best: LineageRecord | null = null;
     for (const r of this.records.values()) {
       if (r.living <= 0) continue;
       if (!best || r.living > best.living || (r.living === best.living && r.id < best.id)) best = r;
     }
-    return best && { id: best.id, genome: best.genome, living: best.living };
+    return best && { id: best.id, genome: best.genome, traits: best.traits, living: best.living };
   }
 
   /** Distinct ancestors of `id` up to LINEAGE_DEPTH generations back. */

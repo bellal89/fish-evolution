@@ -102,7 +102,7 @@ export class World {
         const f = createFish(this.newId(), x, y, i % 2 === 0 ? 'M' : 'F', traits, genome, CONFIG.INITIAL_FISH_ENERGY, null);
         f.heading = this.rng.range(-Math.PI, Math.PI);
         this.fish.push(f);
-        this.lineage.born(f.id, null, genome);
+        this.lineage.born(f.id, null, genome, traits);
       }
       this.predators.push(createPredator(
         this.rng.range(CONFIG.PRED_SIZE, w - CONFIG.PRED_SIZE),
@@ -229,7 +229,7 @@ export class World {
         if (b === a || mated.has(b) || !canMate(a, b)) continue;
         for (const egg of mate(a, b, this.rng, this.tracker, this.tick, this.newId)) {
           this.eggs.push(egg);
-          this.lineage.born(egg.id, egg.parents, egg.genome);
+          this.lineage.born(egg.id, egg.parents, egg.genome, egg.traits);
         }
         mated.add(a);
         mated.add(b);

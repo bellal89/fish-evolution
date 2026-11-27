@@ -26,7 +26,7 @@ while (w.fish.length < START_FISH) {
   const f = createFish(newId(), x, y, w.fish.length % 2 === 0 ? 'M' : 'F', traits, genome, CONFIG.INITIAL_FISH_ENERGY, null);
   f.heading = rng.range(-Math.PI, Math.PI);
   w.fish.push(f);
-  w.lineage.born(f.id, null, genome);
+  w.lineage.born(f.id, null, genome, traits);
 }
 
 for (let i = 0; i < WARMUP; i++) w.step();

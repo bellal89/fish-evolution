@@ -39,7 +39,7 @@ test('snapshot copies do not alias the live world', () => {
 test('snapshot shows the expressed color, scaled algae and the leader', () => {
   const { w, s } = setup();
   const [m, f] = w.fish;
-  w.lineage.born(-1, [m.id, f.id], m.genome);
+  w.lineage.born(-1, [m.id, f.id], m.genome, m.traits);
   const snap = makeSnapshot(w, s, null, false);
   expect(snap.fish[1].color).toBe(expressedColor(f.traits, f.sex));
   expect(snap.food.algae[0].biomass).toBe(w.food.algae[0].biomass / CONFIG.ALGAE_MAX);
