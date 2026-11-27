@@ -12,6 +12,7 @@ import { Rng } from './rng';
 import { INPUT_COUNT, OUTPUT_COUNT, sense, type SenseContext } from './senses';
 import { SpatialGrid } from './spatial';
 import { MAX_FISH_SIZE, randomTraits } from './traits';
+import { Network } from '../neat/network';
 
 export interface WorldEvents {
   lifespansOfDead: number[];
@@ -39,6 +40,28 @@ const WATER_BG = { hue: CONFIG.BG_WATER_HUE, brightness: CONFIG.BG_WATER_BRIGHTN
 const SAND_BG = { hue: CONFIG.BG_SAND_HUE, brightness: CONFIG.BG_SAND_BRIGHTNESS } as const;
 const bg = (_x: number, y: number) => (y < CONFIG.TANK_H - CONFIG.SAND_H ? WATER_BG : SAND_BG);
 
+/**
+ * World state as a structured clone stores it (IndexedDB). The clone keeps the
+ * fields of class instances but drops their prototypes and cannot hold functions.
+ */
+export interface WorldSave {
+  tick: number;
+  nextId: number;
+  extinct: boolean;
+  fish: Omit<Fish, 'brain'>[];
+  eggs: Egg[];
+  predators: Predator[];
+  alarms: Alarm[];
+  events: WorldEvents;
+  rng: Rng;
+  field: FertilizerField;
+  food: FoodSystem;
+  lineage: Lineage;
+  tracker: InnovationTracker;
+}
+
+const revive = <T>(o: T, cls: { prototype: object }): T => Object.setPrototypeOf(o, cls.prototype);
+
 export class World {
   tick = 0;
   fish: Fish[] = [];
@@ -61,39 +84,57 @@ export class World {
   private readonly senseCtx: SenseContext;
   private readonly predView: PredatorView;
 
-  constructor(seed: number) {
-    const { TANK_W: w, TANK_H: h } = CONFIG;
-    const waterH = h - CONFIG.SAND_H;
-    this.rng = new Rng(seed);
-    this.field = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, w, h);
-    this.food = new FoodSystem(this.rng, w, h);
+  /** Creates a new world from a seed, or continues a saved one. */
+  constructor(from: number | WorldSave) {
+    if (typeof from === 'number') {
+      const { TANK_W: w, TANK_H: h } = CONFIG;
+      const waterH = h - CONFIG.SAND_H;
+      this.rng = new Rng(from);
+      this.field = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, w, h);
+      this.food = new FoodSystem(this.rng, w, h);
 
-    for (let i = 0; i < CONFIG.INITIAL_FISH; i++) {
-      const traits = randomTraits(this.rng);
-      const genome = createMinimalGenome(INPUT_COUNT, OUTPUT_COUNT, this.rng, this.tracker);
-      const x = this.rng.range(traits.size, w - traits.size);
-      const y = this.rng.range(traits.size, waterH - traits.size);
-      const f = createFish(this.newId(), x, y, i % 2 === 0 ? 'M' : 'F', traits, genome, CONFIG.INITIAL_FISH_ENERGY, null);
-      f.heading = this.rng.range(-Math.PI, Math.PI);
-      this.fish.push(f);
-      this.lineage.born(f.id, null, genome);
+      for (let i = 0; i < CONFIG.INITIAL_FISH; i++) {
+        const traits = randomTraits(this.rng);
+        const genome = createMinimalGenome(INPUT_COUNT, OUTPUT_COUNT, this.rng, this.tracker);
+        const x = this.rng.range(traits.size, w - traits.size);
+        const y = this.rng.range(traits.size, waterH - traits.size);
+        const f = createFish(this.newId(), x, y, i % 2 === 0 ? 'M' : 'F', traits, genome, CONFIG.INITIAL_FISH_ENERGY, null);
+        f.heading = this.rng.range(-Math.PI, Math.PI);
+        this.fish.push(f);
+        this.lineage.born(f.id, null, genome);
+      }
+      this.predators.push(createPredator(
+        this.rng.range(CONFIG.PRED_SIZE, w - CONFIG.PRED_SIZE),
+        this.rng.range(CONFIG.PRED_SIZE, waterH - CONFIG.PRED_SIZE),
+        this.rng.range(-Math.PI, Math.PI),
+      ));
+
+      // Whatever the fish and the initial algae do not hold starts as fertilizer, spread evenly.
+      const fishEnergy = this.fish.length * CONFIG.INITIAL_FISH_ENERGY;
+      const perCell = (CONFIG.TOTAL_NUTRIENTS - fishEnergy - this.food.total()) / this.field.cells.length;
+      this.field.cells.fill(perCell);
+    } else {
+      ({ tick: this.tick, nextId: this.nextId, extinct: this.extinct, eggs: this.eggs,
+        predators: this.predators, alarms: this.alarms, events: this.events } = from);
+      this.rng = revive(from.rng, Rng);
+      this.field = revive(from.field, FertilizerField);
+      this.food = revive(from.food, FoodSystem);
+      this.lineage = revive(from.lineage, Lineage);
+      this.tracker = revive(from.tracker, InnovationTracker);
+      this.fish = from.fish.map(f => ({ ...f, brain: new Network(f.genome) }));
     }
-    this.predators.push(createPredator(
-      this.rng.range(CONFIG.PRED_SIZE, w - CONFIG.PRED_SIZE),
-      this.rng.range(CONFIG.PRED_SIZE, waterH - CONFIG.PRED_SIZE),
-      this.rng.range(-Math.PI, Math.PI),
-    ));
-
-    // Whatever the fish and the initial algae do not hold starts as fertilizer, spread evenly.
-    const fishEnergy = this.fish.length * CONFIG.INITIAL_FISH_ENERGY;
-    const perCell = (CONFIG.TOTAL_NUTRIENTS - fishEnergy - this.food.total()) / this.field.cells.length;
-    this.field.cells.fill(perCell);
 
     this.senseCtx = {
       food: this.foodGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
-      tick: 0, bg, tankW: w, tankH: h,
+      tick: 0, bg, tankW: CONFIG.TANK_W, tankH: CONFIG.TANK_H,
     };
     this.predView = { fish: this.fishGrid, eggs: this.eggs, bg };
+  }
+
+  save(): WorldSave {
+    const { tick, nextId, extinct, eggs, predators, alarms, events, rng, field, food, lineage, tracker } = this;
+    const fish = this.fish.map(({ brain: _, ...f }) => f);
+    return { tick, nextId, extinct, fish, eggs, predators, alarms, events, rng, field, food, lineage, tracker };
   }
 
   totalNutrients(): number {

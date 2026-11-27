@@ -65,6 +65,8 @@ export type Speed = 0 | 1 | 10 | 50 | 'max';
 export type ToWorker =
   | { type: 'speed'; speed: Speed }
   | { type: 'select'; id: number | null }
-  | { type: 'reset'; seed: number };
+  | { type: 'reset'; seed: number }
+  /** Save the world now, for example before the tab closes. */
+  | { type: 'save' };
 
 export type FromWorker = { type: 'snapshot'; snap: Snapshot };

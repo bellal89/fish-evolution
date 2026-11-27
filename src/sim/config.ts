@@ -201,4 +201,6 @@ export const CONFIG = {
   SNAPSHOT_INTERVAL_MS: 33,
   /** Delay between worker frames, ms. */
   WORKER_TIMER_MS: 16,
+  /** How often the worker saves the world to IndexedDB. */
+  SAVE_INTERVAL_MS: 30_000,
 } as const;

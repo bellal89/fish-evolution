@@ -21,6 +21,7 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
     ${SPEEDS.map(s => s === 'max'
       ? '<button data-speed title="As fast as this computer can run the simulation">max</button>'
       : `<button data-speed>x${s}</button>`).join('')}
+    <button data-act="restart" title="Start a new world">⟲ Restart</button>
     <span id="info"></span>
     <div id="extinct" hidden><div>Population extinct</div><button id="restart">Start over</button></div>
   `;
@@ -45,10 +46,12 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   pauseBtn.onclick = () => setSpeed(0);
   playBtn.onclick = () => setSpeed(lastRunning);
   speedButtons.forEach((b, i) => (b.onclick = () => setSpeed(SPEEDS[i])));
-  root.querySelector<HTMLButtonElement>('#restart')!.onclick = () => {
-    send({ type: 'reset', seed: Date.now() });
-    setSpeed(1);
-  };
+  for (const b of root.querySelectorAll<HTMLButtonElement>('#restart, [data-act="restart"]')) {
+    b.onclick = () => {
+      send({ type: 'reset', seed: Date.now() });
+      setSpeed(1);
+    };
+  }
   highlight();
 
   return {

@@ -23,6 +23,10 @@ const send = (m: ToWorker): void => {
   worker.postMessage(m);
 };
 const controls = mountControls(document.getElementById('bar')!, send);
+// The tab may close after it hides; save then so that little progress is lost.
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) send({ type: 'save' });
+});
 
 let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {

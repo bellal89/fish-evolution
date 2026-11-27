@@ -99,3 +99,12 @@ test('a fish on an algae cell takes one bite, then waits', () => {
   expect(cell.biomass).toBeCloseTo(CONFIG.ALGAE_MAX - CONFIG.BITE, 1);
   expect(f.biteCooldown).toBe(CONFIG.BITE_COOLDOWN - 1);
 });
+
+test('a world restored from a structured clone of its save continues identically', () => {
+  const a = new World(3);
+  for (let i = 0; i < 3000; i++) a.step();
+  const b = new World(structuredClone(a.save()));
+  for (let i = 0; i < 1000; i++) { a.step(); b.step(); }
+  const state = (w: World) => JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
+  expect(state(b)).toBe(state(a));
+}, 60_000);
