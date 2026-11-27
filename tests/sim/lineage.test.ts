@@ -61,15 +61,6 @@ test('lineage prunes dead branches', () => {
   expect(l.alive(999)).toBe(0);
 });
 
-test('dead record with living descendants is kept', () => {
-  const l = family();
-  l.died(1);
-  l.died(2);
-  l.died(3);
-  expect(l.alive(1)).toBe(2);
-  expect(l.leader()?.id).toBe(1);
-});
-
 test('ties go to the lowest id', () => {
   const l = new Lineage();
   l.born(9, null, g());

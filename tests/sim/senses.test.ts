@@ -48,11 +48,17 @@ test('labels match input count', () => {
   expect(INPUT_LABELS).toHaveLength(INPUT_COUNT);
 });
 
-test('food straight ahead lights middle ray food channel', () => {
+test.each([
+  ['food', 0],
+  ['predator', 2],
+])('%s straight ahead lights only the middle ray', (kind, ch) => {
   const me = makeFish(100, 450);
-  const out = run(me, makeCtx([me], [{ x: 200, y: 450, amount: 1 }]));
-  expect(out[2 * 3 + 0]).toBeGreaterThan(0.5);
-  for (const ray of [0, 1, 3, 4]) expect(out[ray * 3]).toBe(0);
+  const ctx = kind === 'food'
+    ? makeCtx([me], [{ x: 200, y: 450, amount: 1 }])
+    : makeCtx([me], [], [{ x: 200, y: 450, speed: 0, maxSpeed: 4, size: 6 }]);
+  const out = run(me, ctx);
+  expect(out[2 * 3 + ch]).toBeGreaterThan(0.5);
+  for (const ray of [0, 1, 3, 4]) expect(out[ray * 3 + ch]).toBe(0);
 });
 
 test('food the fish is inside reads full strength on every ray', () => {
@@ -61,13 +67,38 @@ test('food the fish is inside reads full strength on every ray', () => {
   for (let r = 0; r < CONFIG.RAY_COUNT; r++) expect(out[r * 3]).toBe(1);
 });
 
-test('predator behind is invisible to eyes but felt by lateral line', () => {
+test('a slow predator behind is neither seen nor felt', () => {
   const me = makeFish(100, 450);
-  const pred: SensingPredator = { x: 60, y: 450, speed: 3, maxSpeed: 4, size: 20 };
-  const out = run(me, makeCtx([me], [], [pred]));
+  const out = run(me, makeCtx([me], [], [{ x: 60, y: 450, speed: CONFIG.LATERAL_MIN_SPEED, maxSpeed: 4, size: 20 }]));
   for (let r = 0; r < CONFIG.RAY_COUNT; r++) expect(out[r * 3 + 2]).toBe(0);
-  expect(out[17]).toBeGreaterThan(0);
-  expect(out[16]).toBe(0);
+  for (let i = 16; i < 20; i++) expect(out[i]).toBe(0);
+});
+
+test('ray 0 looks to the left', () => {
+  const me = makeFish(100, 450);
+  const a = -me.traits.viewAngle / 2;
+  const out = run(me, makeCtx([me], [{ x: 100 + 100 * Math.cos(a), y: 450 + 100 * Math.sin(a), amount: 1 }]));
+  expect(out[0]).toBeGreaterThan(0);
+  expect(out[4 * 3]).toBe(0);
+});
+
+// Heading 0 (+x); screen y points down, so the fish's left is -y.
+test.each([
+  ['predator', 'front', 140, 450, 16],
+  ['predator', 'back', 60, 450, 17],
+  ['predator', 'left', 100, 410, 18],
+  ['predator', 'right', 100, 490, 19],
+  ['fish', 'left', 100, 410, 18],
+])('lateral line feels a moving %s %s', (kind, _, x, y, input) => {
+  const me = makeFish(100, 450);
+  const ctx = kind === 'fish'
+    ? makeCtx([me, makeFish(x, y, { speed: 3 })])
+    : makeCtx([me], [], [{ x, y, speed: 3, maxSpeed: 4, size: 6 }]);
+  const out = run(me, ctx);
+  for (let i = 16; i < 20; i++) {
+    if (i === input) expect(out[i]).toBeGreaterThan(0);
+    else expect(out[i]).toBe(0);
+  }
 });
 
 test('camouflaged fish seen at shorter range than loud fish', () => {
@@ -92,6 +123,11 @@ test('smell gradient points to food side', () => {
   expect(mirror[20]).toBeLessThan(0);
 });
 
+test('food just beyond smell range is not smelled', () => {
+  const me = makeFish(500, 450);
+  expect(run(me, makeCtx([me], [{ x: 500 + CONFIG.SMELL_RADIUS, y: 430, amount: 1 }]))[20]).toBe(0);
+});
+
 test('alarm decays with age and distance cutoff', () => {
   const me = makeFish(500, 450);
   const ctx = makeCtx([me]);
@@ -102,21 +138,39 @@ test('alarm decays with age and distance cutoff', () => {
   expect(run(me, ctx)[21]).toBe(0);
 });
 
-test('wall closeness, mate attraction and state inputs', () => {
-  const me = makeFish(W - 50, 450, { energy: 1000, age: 1e9, ready: true });
+// 50 px from the wall ahead with viewRange 200.
+test.each([
+  ['right', W - 50, 450, 0],
+  ['left', 50, 450, Math.PI],
+  ['sand', 500, H - CONFIG.SAND_H - 50, Math.PI / 2],
+  ['surface', 500, 50, -Math.PI / 2],
+])('wall input facing the %s wall', (_, x, y, heading) => {
+  const me = makeFish(x, y, { heading });
+  expect(run(me, makeCtx([me]))[22]).toBeCloseTo(0.75, 5);
+});
+
+test('energy, age and ready inputs', () => {
+  const me = makeFish(500, 450, { ready: true });
+  me.energy = me.traits.mateThreshold / 2;
+  me.age = me.traits.lifespanTicks / 4;
   const out = run(me, makeCtx([me]));
-  expect(out[22]).toBeCloseTo(1 - 50 / 200, 5);
-  expect(out[23]).toBe(1);
-  expect(out[24]).toBe(1);
-  expect(out[25]).toBe(1);
-  const mate = makeFish(W - 20, 450, { sex: 'F' });
-  mate.traits.colorF = { hue: 0.3, brightness: 1, pattern: 'solid', patternCount: 1, hue2: 0 };
+  expect([out[23], out[24], out[25]]).toEqual([0.5, 0.25, 1].map(v => expect.closeTo(v, 5)));
+  me.ready = false;
+  expect(run(me, makeCtx([me]))[25]).toBe(0);
+});
+
+test('mate appeal comes only from the opposite sex', () => {
+  const me = makeFish(500, 450);
   me.traits.prefHue = 0.3;
   me.traits.prefPattern = 'solid';
-  const withMate = run(me, makeCtx([me, mate], [], [], { hue: 0.5, brightness: 0 }));
-  expect(withMate[15]).toBeGreaterThan(0);
-  const same = makeFish(W - 20, 450, { sex: 'M' });
-  expect(run(me, makeCtx([me, same], [], [], { hue: 0.5, brightness: 0 }))[15]).toBe(0);
+  const other = (sex: 'M' | 'F') => {
+    const o = makeFish(550, 450, { sex });
+    o.traits.colorF = o.traits.colorM = { hue: 0.3, brightness: 1, pattern: 'solid', patternCount: 1, hue2: 0 };
+    return o;
+  };
+  const appeal = (o: SensingFish) => run(me, makeCtx([me, o], [], [], { hue: 0.5, brightness: 0 }))[15];
+  expect(appeal(other('F'))).toBeGreaterThan(0);
+  expect(appeal(other('M'))).toBe(0);
 });
 
 test('all inputs finite and within [-1,1]', () => {

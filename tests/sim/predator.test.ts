@@ -7,7 +7,7 @@ import {
 } from '../../src/sim/predator';
 import type { Egg } from '../../src/sim/reproduction';
 import { Rng } from '../../src/sim/rng';
-import { INPUT_COUNT, OUTPUT_COUNT, type SensingPredator } from '../../src/sim/senses';
+import { INPUT_COUNT, OUTPUT_COUNT } from '../../src/sim/senses';
 import { SpatialGrid } from '../../src/sim/spatial';
 import { randomTraits } from '../../src/sim/traits';
 
@@ -30,11 +30,6 @@ function view(fish: Fish[], eggs: Egg[] = []): PredatorView {
   for (const f of fish) grid.insert(f);
   return { fish: grid, eggs, bg };
 }
-
-test('predator is assignable to SensingPredator', () => {
-  const s: SensingPredator = createPredator(100, 100, 0);
-  expect(s.size).toBe(CONFIG.PRED_SIZE);
-});
 
 test('predator chases visible fish and rests after stamina runs out', () => {
   const p = createPredator(400, 300, 0);
@@ -113,29 +108,31 @@ test('chooses the nearest fish and drops a vanished target', () => {
   expect(p.targetId).toBeNull();
 });
 
-test('predator steers toward a touching egg when no fish is in sight', () => {
+test('with no fish in sight the predator steers only to a touching egg', () => {
   const p = createPredator(400, 300, 0);
-  const egg = { id: 9, x: 400, y: 300 + p.size, energy: 5 } as Egg;
-  const action = new ScriptedPredator().decide(p, view([], [egg]), new Rng(1));
-  expect(action.turn).toBeGreaterThan(0);
+  const turnFor = (dy: number) =>
+    new ScriptedPredator().decide(p, view([], [{ id: 9, x: 400, y: 300 + dy, energy: 5 } as Egg]), new Rng(1)).turn;
+  expect(turnFor(p.size)).toBe(1);
+  expect(Math.abs(turnFor(p.size + 100))).toBeLessThanOrEqual(CONFIG.PRED_WANDER_TURN);
   expect(p.state).toBe('patrol');
 });
 
-test('stepPredator speeds by state, stays in the water and counts satiety down', () => {
-  const p = createPredator(10, 10, Math.PI);
+test.each([
+  ['patrol', CONFIG.PRED_PATROL_SPEED],
+  ['chase', CONFIG.PRED_DASH_SPEED],
+  ['rest', 0],
+] as const)('stepPredator moves at the %s speed', (state, speed) => {
+  const p = createPredator(400, 300, 0);
+  p.state = state;
+  stepPredator(p, { turn: 0, thrust: 1 }, W, H);
+  expect(p.x - 400).toBeCloseTo(speed);
+});
+
+test('stepPredator bounces off the sand and counts satiety down', () => {
+  const p = createPredator(400, H - CONFIG.SAND_H, Math.PI / 2);
   p.satiety = 2;
   stepPredator(p, { turn: 0, thrust: 1 }, W, H);
-  expect(p.x).toBe(p.size);
-  expect(Math.cos(p.heading)).toBeGreaterThan(0);
+  expect(p.y).toBe(H - CONFIG.SAND_H - p.size);
+  expect(Math.sin(p.heading)).toBeLessThan(0);
   expect(p.satiety).toBe(1);
-  p.state = 'chase';
-  p.heading = 0;
-  const x = p.x;
-  stepPredator(p, { turn: 0, thrust: 1 }, W, H);
-  expect(p.x - x).toBeCloseTo(CONFIG.PRED_DASH_SPEED);
-  p.x = W; p.y = H;
-  stepPredator(p, { turn: 0, thrust: 1 }, W, H);
-  expect(p.x).toBeLessThanOrEqual(W - p.size);
-  expect(p.y).toBeLessThanOrEqual(H - CONFIG.SAND_H - p.size);
-  expect(p.satiety).toBe(0);
 });

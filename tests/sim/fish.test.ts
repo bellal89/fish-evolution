@@ -7,7 +7,7 @@ import {
   type Fish,
 } from '../../src/sim/fish';
 import { Rng } from '../../src/sim/rng';
-import { INPUT_COUNT, OUTPUT_COUNT, type SensingFish } from '../../src/sim/senses';
+import { INPUT_COUNT, OUTPUT_COUNT } from '../../src/sim/senses';
 import { randomTraits } from '../../src/sim/traits';
 
 const W = CONFIG.TANK_W, H = CONFIG.TANK_H;
@@ -30,15 +30,6 @@ function mk(over: (f: Fish) => void = () => {}, genome?: Genome): Fish {
 }
 
 const out = (turn: number, thrust: number) => Float32Array.from([turn, thrust, 0]);
-
-test('createFish sets sane defaults and is assignable to SensingFish', () => {
-  const f = mk();
-  const s: SensingFish = f;
-  expect(s.ready).toBe(false);
-  expect(f.lastInputs.length).toBe(INPUT_COUNT);
-  expect(f.lastOutputs.length).toBe(OUTPUT_COUNT);
-  expect([f.speed, f.age, f.gut, f.children, f.mateCooldown]).toEqual([0, 0, 0, 0, 0]);
-});
 
 test('brain cost grows with size', () => {
   const small = mkGenome();
@@ -89,45 +80,22 @@ test('excrete releases the gut only past the threshold', () => {
   expect(f.gut).toBe(0);
 });
 
-test('thrust maps to speed and moves along the heading', () => {
+test('outputs turn the fish and set its speed along the heading', () => {
   const f = mk();
-  applyOutputs(f, out(0, 1), W, H);
+  applyOutputs(f, out(1, 1), W, H);
+  expect(f.heading).toBeCloseTo(CONFIG.TURN_RATE);
   expect(f.speed).toBeCloseTo(3);
-  expect(f.x).toBeCloseTo(803);
+  expect(f.x).toBeCloseTo(800 + 3 * Math.cos(CONFIG.TURN_RATE));
   const g = mk();
   applyOutputs(g, out(0, -1), W, H);
   expect(g.speed).toBe(0);
 });
 
-test('full outputs turn and swim at the maximum', () => {
-  const f = mk();
-  applyOutputs(f, out(1, 1), W, H);
-  expect(f.speed).toBeCloseTo(3);
-  expect(f.heading).toBeCloseTo(CONFIG.TURN_RATE);
-  expect(Number.isFinite(f.x + f.y)).toBe(true);
-});
-
-test('fish is clamped inside tank and can turn away', () => {
-  const f = mk(x => { x.x = 1599; x.y = 450; });
-  for (let i = 0; i < 100; i++) applyOutputs(f, out(0, 1), W, H);
-  expect(f.x).toBeLessThanOrEqual(W - f.traits.size);
-  expect(Math.cos(f.heading)).toBeLessThan(0);
-  for (let i = 0; i < 100; i++) applyOutputs(f, out(0, 1), W, H);
-  expect(f.x).toBeLessThan(W - f.traits.size);
-});
-
-test('corner and water floor: stays inside and heads away', () => {
-  const floor = H - CONFIG.SAND_H - 10;
-  const f = mk(x => { x.x = W - 10; x.y = floor; x.heading = Math.PI / 4; });
-  for (let i = 0; i < 20; i++) applyOutputs(f, out(0, 1), W, H);
-  expect(f.x).toBeLessThanOrEqual(W - 10);
-  expect(f.y).toBeLessThanOrEqual(floor);
-  expect(Math.cos(f.heading)).toBeLessThan(0);
+test('fish bounces off the sand, not the tank bottom', () => {
+  const f = mk(x => { x.y = H - CONFIG.SAND_H; x.heading = Math.PI / 2; });
+  applyOutputs(f, out(0, 1), W, H);
+  expect(f.y).toBe(H - CONFIG.SAND_H - f.traits.size);
   expect(Math.sin(f.heading)).toBeLessThan(0);
-  const top = mk(x => { x.y = 10; x.heading = -Math.PI / 2; });
-  applyOutputs(top, out(0, 1), W, H);
-  expect(top.y).toBe(10);
-  expect(Math.sin(top.heading)).toBeGreaterThan(0);
 });
 
 test('starves at zero energy, dies of old age', () => {

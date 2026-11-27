@@ -29,31 +29,27 @@ const pair = (over: (f: Fish) => void = () => {}): [Fish, Fish] => [mk(1, 'M', o
 const counter = () => { let n = 100; return () => n++; };
 const sum = (xs: number[]) => xs.reduce((s, x) => s + x, 0);
 
-test('same-sex pair cannot mate', () => {
-  const [a, b] = pair();
-  expect(canMate(a, b)).toBe(true);
-  expect(canMate(mk(1, 'M'), mk(2, 'M'))).toBe(false);
-  expect(canMate(mk(1, 'F'), mk(2, 'F'))).toBe(false);
+test('a mature, willing pair in contact can mate', () => {
+  expect(canMate(...pair())).toBe(true);
 });
 
-test('immature or low-energy fish cannot mate', () => {
+test.each<[string, (a: Fish, b: Fish) => void]>([
+  ['same sex', (_, b) => { b.sex = 'M'; }],
+  ['immature', a => { a.age = CONFIG.MATURITY_TICKS - 1; }],
+  ['low energy', (_, b) => { b.energy = b.traits.mateThreshold - 1; }],
+  ['on cooldown', a => { a.mateCooldown = 1; }],
+  ['no mating intent', (_, b) => { b.lastOutputs[2] = 0; }],
+  ['not touching', (a, b) => { b.x = a.x + a.traits.size + b.traits.size; }],
+  ['unattractive partner', (a, b) => {
+    a.traits.choosiness = 1;
+    a.traits.prefHue = 0;
+    a.traits.prefPattern = 'stripes';
+    b.traits.colorF = { ...b.traits.colorF, hue: 0.5, brightness: 0, pattern: 'solid' };
+  }],
+])('cannot mate: %s', (_, spoil) => {
   const [a, b] = pair();
-  a.age = CONFIG.MATURITY_TICKS - 1;
+  spoil(a, b);
   expect(canMate(a, b)).toBe(false);
-  const [c, d] = pair();
-  d.energy = d.traits.mateThreshold - 1;
-  expect(canMate(c, d)).toBe(false);
-});
-
-test('choosy fish rejects unattractive partner', () => {
-  const [a, b] = pair();
-  expect(canMate(a, b)).toBe(true);
-  a.traits.choosiness = 1;
-  a.traits.prefHue = 0;
-  a.traits.prefPattern = 'stripes';
-  b.traits.colorF = { ...b.traits.colorF, hue: 0.5, brightness: 0, pattern: 'solid' };
-  expect(canMate(a, b)).toBe(false);
-  expect(canMate(b, a)).toBe(false);
 });
 
 test('mating conserves energy', () => {
@@ -87,6 +83,14 @@ test('eggs sit at the midpoint with parents and hatch time; parents get cooldown
   expect(b.mateCooldown).toBe(CONFIG.MATE_COOLDOWN);
   expect(a.children).toBe(eggs.length);
   expect(b.children).toBe(eggs.length);
+});
+
+test('eggs carry mutated traits and genomes', () => {
+  const [a, b] = pair();
+  const eggs = mate(a, b, new Rng(3), tracker, 0, counter());
+  const parentWeights = new Set([...a.genome.conns, ...b.genome.conns].map(c => c.weight));
+  for (const e of eggs) expect([a.traits.size, b.traits.size]).not.toContain(e.traits.size);
+  expect(eggs.some(e => e.genome.conns.some(c => !parentWeights.has(c.weight)))).toBe(true);
 });
 
 test('children inherit the structure of the higher-energy parent', () => {

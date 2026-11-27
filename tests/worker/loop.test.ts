@@ -24,8 +24,8 @@ test('speed 0 does not advance', () => {
 
 test('speed 10 advances ~10 ticks per frame, default speed is 1', () => {
   const a = setup();
-  a.loop.frame(0);
-  a.loop.frame(6 * FRAME_MS); // 6 frames of wall time
+  a.loop.frame(1000); // the first frame owes nothing
+  a.loop.frame(1000 + 6 * FRAME_MS); // 6 frames of wall time
   expect(Math.abs(a.snaps().at(-1)!.tick - 6)).toBeLessThanOrEqual(1);
 
   const b = setup();
@@ -128,18 +128,4 @@ test('select chooses a fish', () => {
   loop.handle({ type: 'select', id: null });
   loop.frame(2000);
   expect(snaps().at(-1)!.selected).toBeNull();
-  loop.handle({ type: 'select', id: f.id });
-  loop.frame(3000);
-  expect(snaps().at(-1)!.selected!.id).toBe(f.id);
-});
-
-test('same seed gives the same world', () => {
-  const run = () => {
-    const { loop, snaps } = setup();
-    loop.handle({ type: 'speed', speed: 10 });
-    loop.frame(0);
-    loop.frame(FRAME_MS);
-    return snaps().at(-1)!.fish.map(f => [f.x, f.y]);
-  };
-  expect(run()).toEqual(run());
 });

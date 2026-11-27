@@ -12,13 +12,7 @@ function makeField(level: number): FertilizerField {
   return f;
 }
 
-test('creates algae along the bottom and on rock tops', () => {
-  const food = new FoodSystem(new Rng(1), W, H);
-  expect(food.algae.length).toBe(CONFIG.ALGAE_CELLS);
-  expect(food.algae.some((a) => a.y < H - CONFIG.SAND_H)).toBe(true);
-});
-
-test('exposes the generated rocks, inside the tank', () => {
+test('rocks sit on the sand inside the tank, algae on the sand and rock tops', () => {
   const food = new FoodSystem(new Rng(1), W, H);
   expect(food.rocks.length).toBe(CONFIG.ROCK_COUNT);
   for (const r of food.rocks) {
@@ -26,9 +20,11 @@ test('exposes the generated rocks, inside the tank', () => {
     expect(r.x).toBeLessThan(W);
     expect(r.y).toBe(H - CONFIG.SAND_H);
   }
+  expect(food.algae.length).toBe(CONFIG.ALGAE_CELLS);
+  expect(food.algae.some((a) => a.y < H - CONFIG.SAND_H)).toBe(true);
   for (const a of food.algae) {
     expect(a.x).toBeGreaterThanOrEqual(0);
-    expect(a.x).toBeLessThanOrEqual(CONFIG.TANK_W);
+    expect(a.x).toBeLessThanOrEqual(W);
   }
 });
 
@@ -44,14 +40,16 @@ test('food step conserves field+food total', () => {
   }
   expect(f.total() + food.total()).toBeCloseTo(before, 4);
   expect(food.plankton.length).toBeGreaterThan(0);
+  for (const p of food.plankton) expect(p.y >= 0 && p.y <= H - CONFIG.SAND_H && p.x >= 0 && p.x <= W).toBe(true);
 });
 
+// Few ticks, so that neither field runs out.
 test('algae grows faster with more fertilizer', () => {
   const run = (level: number) => {
     const f = makeField(level);
     const rng = new Rng(2);
     const food = new FoodSystem(rng, W, H);
-    for (let i = 0; i < 600; i++) food.step(f, rng);
+    for (let i = 0; i < 10; i++) food.step(f, rng);
     return food.algae.reduce((s, a) => s + a.biomass, 0);
   };
   expect(run(2)).toBeGreaterThan(run(0.2));
@@ -77,6 +75,14 @@ test('eatAlgae and removePlankton return what was actually taken', () => {
   const p = food.plankton[0];
   expect(food.removePlankton(p)).toBe(p.amount);
   expect(food.plankton).not.toContain(p);
+  expect(food.removePlankton(p)).toBe(0);
+});
+
+test('no plankton spawns from a field at the minimum', () => {
+  const rng = new Rng(6);
+  const food = new FoodSystem(rng, W, H);
+  food.step(makeField(CONFIG.PLANKTON_FERT_MIN), rng);
+  expect(food.plankton).toEqual([]);
 });
 
 test('waste sinks, then dissolves into the field once on the bottom', () => {
