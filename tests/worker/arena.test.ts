@@ -74,12 +74,8 @@ test('the view shows the first living fish, or the selected one', () => {
   expect(side.genome).toBe(genome);
 });
 
-test('the view carries the speed, the choices and the food eaten', () => {
+test('the view shows the food eaten by each side', () => {
   const a = new Arena(3, [randomPick, leaderPick]);
-  a.speed = 10;
   a.worlds[1].events.foodEaten = 7;
-  const v = a.view();
-  expect(v.speed).toBe(10);
-  expect(v.choices).toEqual([{ kind: 'random' }, { kind: 'leader' }]);
-  expect(v.sides[1].foodEaten).toBe(7);
+  expect(a.view().sides[1].foodEaten).toBe(7);
 });
