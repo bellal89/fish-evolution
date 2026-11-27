@@ -71,6 +71,11 @@ test('a hungry predator attacks and eats a touching fish, stops the chase and al
   expect(g.lastInputs[21]).toBeGreaterThan(0); // the kill raised an alarm
 });
 
+test('a fish eaten by the predator leaves no body', () => {
+  const { w } = encounter(0);
+  expect(w.food.bodies).toEqual([]);
+});
+
 test('a sated predator spares a touching fish', () => {
   const { w, f, g } = encounter(10);
   expect(w.fish).toEqual([f, g]);
@@ -104,6 +109,36 @@ test('a world restored from a structured clone of its save continues identically
   const a = new World(3);
   for (let i = 0; i < 3000; i++) a.step();
   const b = new World(structuredClone(a.save()));
+  for (let i = 0; i < 1000; i++) { a.step(); b.step(); }
+  const state = (w: World) => JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
+  expect(state(b)).toBe(state(a));
+}, 60_000);
+
+test('a starved fish becomes a body with all its energy and gut', () => {
+  const w = new World(1);
+  const [f] = w.fish;
+  w.fish = [f];
+  w.predators.length = 0;
+  w.food.algae.length = 0;
+  w.food.plankton.length = 0;
+  f.energy = 0;
+  f.gut = 1.5; // Below EXCRETE_AMOUNT, so no waste.
+  const waste = w.food.waste.length;
+  w.step();
+  expect(w.fish).toEqual([]);
+  expect(w.food.waste.length).toBe(waste);
+  expect(w.food.bodies).toHaveLength(1);
+  const [b] = w.food.bodies;
+  expect(b.amount).toBe(1.5);
+  expect([b.full, b.size, b.heading]).toEqual([1.5, f.traits.size, f.heading]);
+});
+
+test('restore keeps bodies', () => {
+  const a = new World(3);
+  for (let i = 0; i < 3000; i++) a.step();
+  a.food.addBody(400, 100, 20, 10, 1);
+  const b = new World(structuredClone(a.save()));
+  expect(b.food.bodies.length).toBeGreaterThan(0);
   for (let i = 0; i < 1000; i++) { a.step(); b.step(); }
   const state = (w: World) => JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
   expect(state(b)).toBe(state(a));

@@ -99,6 +99,12 @@ export const CONFIG = {
   WASTE_DISSOLVE_RATE: 0.002,
   /** Ticks a waste particle lies on the bottom before dissolving fully. */
   WASTE_BOTTOM_TICKS: 120,
+  /** A dead fish's body sinks this fast, px/tick (3 times the waste). */
+  BODY_SINK_SPEED: 1.5,
+  /** A body rests this far below the floor line, as a fraction of its size. */
+  BODY_REST_DEPTH: 0.5,
+  /** Ticks a body lies on the bottom while it dissolves into the field (10 s). */
+  BODY_DISSOLVE_TICKS: 600,
 
   // Senses
   /** Vision rays per fish, spread evenly across the view angle. */

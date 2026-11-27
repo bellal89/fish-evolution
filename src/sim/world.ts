@@ -280,7 +280,7 @@ export class World {
     const alive: Fish[] = [];
     for (const f of this.fish) {
       if (!isDead(f)) { alive.push(f); continue; }
-      this.food.addWaste(f.x, f.y, f.energy + f.gut);
+      this.food.addBody(f.x, f.y, f.energy + f.gut, f.traits.size, f.heading);
       this.recordDeath(f);
     }
     this.fish = alive;
