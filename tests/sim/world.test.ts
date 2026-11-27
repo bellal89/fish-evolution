@@ -178,3 +178,43 @@ test('a fish that dies with nothing left leaves no body', () => {
   expect(w.fish).toEqual([]);
   expect(w.food.bodies).toEqual([]);
 });
+
+/** A world whose first two fish lead: one child of theirs is alive. */
+function withLeader(): World {
+  const w = new World(1);
+  const [a, b] = w.fish;
+  w.lineage.born(999_999, [a.id, b.id], a.genome, a.traits);
+  return w;
+}
+
+test('the world stores the leader every LEADER_SNAPSHOT_TICKS', () => {
+  const w = withLeader();
+  w.tick = CONFIG.LEADER_SNAPSHOT_TICKS - 2;
+  w.step();
+  expect(w.leaderHistory).toEqual([]);
+  w.step();
+  const lead = w.lineage.leader()!;
+  expect(w.leaderHistory).toHaveLength(1);
+  const [e] = w.leaderHistory;
+  expect(e.tick).toBe(CONFIG.LEADER_SNAPSHOT_TICKS);
+  expect(e.living).toBe(1);
+  expect(e.genome).toBe(lead.genome);
+  expect(e.traits).toBe(lead.traits);
+  w.step();
+  expect(w.leaderHistory).toHaveLength(1);
+});
+
+test('no leader entry when there is no leader', () => {
+  const w = new World(1);
+  w.tick = CONFIG.LEADER_SNAPSHOT_TICKS - 1;
+  w.step();
+  expect(w.leaderHistory).toEqual([]);
+});
+
+test('restore keeps the leader history', () => {
+  const w = withLeader();
+  w.tick = CONFIG.LEADER_SNAPSHOT_TICKS - 1;
+  w.step();
+  expect(w.leaderHistory).toHaveLength(1);
+  expect(new World(structuredClone(w.save())).leaderHistory).toEqual(w.leaderHistory);
+});

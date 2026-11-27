@@ -1,21 +1,31 @@
 import type { Genome } from '../neat/genome';
 import { CONFIG } from './config';
+import type { Traits } from './traits';
 
 interface LineageRecord {
   id: number;
   genome: Genome;
+  traits: Traits;
   parents: [number, number] | null;
   alive: boolean;
   /** Living descendants within LINEAGE_DEPTH generations. */
   living: number;
 }
 
+/** The leader at one moment, for the arena to pick later. */
+export interface LeaderEntry {
+  tick: number;
+  living: number;
+  genome: Genome;
+  traits: Traits;
+}
+
 /** Tracks how many living descendants each ancestor has, to find the dominant line. */
 export class Lineage {
   private readonly records = new Map<number, LineageRecord>();
 
-  born(id: number, parents: [number, number] | null, genome: Genome): void {
-    this.records.set(id, { id, genome, parents, alive: true, living: 0 });
+  born(id: number, parents: [number, number] | null, genome: Genome, traits: Traits): void {
+    this.records.set(id, { id, genome, traits, parents, alive: true, living: 0 });
     for (const a of this.ancestors(id)) a.living += 1;
   }
 
@@ -34,14 +44,18 @@ export class Lineage {
     return this.records.get(id)?.living ?? 0;
   }
 
+  /** Up to `n` records with living descendants: most living first, ties by lowest id. */
+  top(n: number): { id: number; genome: Genome; traits: Traits; living: number }[] {
+    return [...this.records.values()]
+      .filter(r => r.living > 0)
+      .sort((a, b) => b.living - a.living || a.id - b.id)
+      .slice(0, n)
+      .map(({ id, genome, traits, living }) => ({ id, genome, traits, living }));
+  }
+
   /** Record with the most living descendants (ties: lowest id), or null. */
-  leader(): { id: number; genome: Genome; living: number } | null {
-    let best: LineageRecord | null = null;
-    for (const r of this.records.values()) {
-      if (r.living <= 0) continue;
-      if (!best || r.living > best.living || (r.living === best.living && r.id < best.id)) best = r;
-    }
-    return best && { id: best.id, genome: best.genome, living: best.living };
+  leader(): { id: number; genome: Genome; traits: Traits; living: number } | null {
+    return this.top(1)[0] ?? null;
   }
 
   /** Distinct ancestors of `id` up to LINEAGE_DEPTH generations back. */

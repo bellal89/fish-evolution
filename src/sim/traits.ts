@@ -41,7 +41,7 @@ type Range = readonly [number, number];
 const R = CONFIG.TRAIT_RANGES;
 export const MAX_FISH_SIZE = R.size[1];
 
-const SCALAR_KEYS = [
+export const SCALAR_KEYS = [
   'size',
   'maxSpeed',
   'viewAngle',

@@ -1,10 +1,12 @@
-import type { Snapshot } from '../protocol';
+import { genomeSize } from '../neat/genome';
+import type { LeaderRow, Snapshot } from '../protocol';
 import { CONFIG } from './config';
-import type { Stats } from './stats';
+import type { StatPoint } from './stats';
 import { expressedColor } from './traits';
 import type { World } from './world';
 
-export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, includeStats: boolean): Snapshot {
+/** `stats` is in the snapshot only when `history` is given. */
+export function makeSnapshot(w: World, selectedId: number | null, history?: StatPoint[]): Snapshot {
   const sel = w.fish.find(f => f.id === selectedId);
   const lead = w.lineage.leader();
   return {
@@ -35,6 +37,13 @@ export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, 
         }
       : null,
     leader: lead ? { genome: lead.genome, living: lead.living } : null,
-    ...(includeStats ? { stats: stats.history } : {}),
+    ...(history ? { stats: history } : {}),
   };
+}
+
+export function leaderRows(w: World): LeaderRow[] {
+  return w.leaderHistory.map(e => {
+    const { hidden, enabledConns } = genomeSize(e.genome);
+    return { tick: e.tick, living: e.living, hidden, conns: enabledConns, colorM: e.traits.colorM, colorF: e.traits.colorF };
+  });
 }

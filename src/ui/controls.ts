@@ -3,7 +3,8 @@ import { CONFIG } from '../sim/config';
 
 const SPEEDS = [1, 10, 50, 'max'] as const;
 
-function simTime(tick: number): string {
+/** Sim time as m:ss or h:mm:ss. */
+export function simTime(tick: number): string {
   const s = Math.floor(tick / CONFIG.TICKS_PER_SEC);
   const h = Math.floor(s / 3600);
   const m = Math.floor(s / 60) % 60;
@@ -11,7 +12,10 @@ function simTime(tick: number): string {
   return h > 0 ? `${h}:${mmss.padStart(5, '0')}` : mmss;
 }
 
-export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): { update(snap: Snapshot): void } {
+/** `onArena(true)` opens the arena, `onArena(false)` returns to the main world. */
+export function mountControls(
+  root: HTMLElement, send: (m: ToWorker) => void, onArena: (open: boolean) => void,
+): { update(snap: Snapshot): void } {
   let speed: Speed = 1;
   let lastRunning: Exclude<Speed, 0> = 1;
 
@@ -22,6 +26,10 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
       ? '<button data-speed title="As fast as this computer can run the simulation">max</button>'
       : `<button data-speed>x${s}</button>`).join('')}
     <button data-act="restart" title="Start a new world">⟲ Restart</button>
+    <button data-act="arena" title="Compare two brains side by side">Arena</button>
+    <button data-act="export" title="Download this world as a file">Export</button>
+    <button data-act="import" title="Load a world from a file">Import</button>
+    <input type="file" accept=".gz" hidden>
     <span id="info"></span>
     <div id="extinct" hidden><div>Population extinct</div><button id="restart">Start over</button></div>
   `;
@@ -53,6 +61,30 @@ export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): {
   root.querySelector<HTMLButtonElement>('#restart')!.onclick = restart;
   root.querySelector<HTMLButtonElement>('[data-act="restart"]')!.onclick = () => {
     if (confirm('Start a new world? The current world will be lost.')) restart();
+  };
+  // The main speed, Restart and Import act on the main world, which pauses while the arena is open.
+  const importBtn = root.querySelector<HTMLButtonElement>('[data-act="import"]')!;
+  const mainButtons = [
+    pauseBtn, playBtn, ...speedButtons, root.querySelector<HTMLButtonElement>('[data-act="restart"]')!, importBtn,
+  ];
+  const arenaBtn = root.querySelector<HTMLButtonElement>('[data-act="arena"]')!;
+  let arenaOpen = false;
+  arenaBtn.onclick = () => {
+    arenaOpen = !arenaOpen;
+    arenaBtn.textContent = arenaOpen ? '← Back' : 'Arena';
+    arenaBtn.title = arenaOpen ? 'Return to the main world' : 'Compare two brains side by side';
+    for (const b of mainButtons) b.hidden = arenaOpen;
+    onArena(arenaOpen);
+  };
+  root.querySelector<HTMLButtonElement>('[data-act="export"]')!.onclick = () => send({ type: 'export' });
+  const file = root.querySelector<HTMLInputElement>('input[type="file"]')!;
+  importBtn.onclick = () => {
+    if (confirm('Replace the current world with the world from this file? The current world will be lost.')) file.click();
+  };
+  file.onchange = async () => {
+    const f = file.files![0];
+    file.value = '';
+    send({ type: 'import', data: await f.arrayBuffer() });
   };
   highlight();
 

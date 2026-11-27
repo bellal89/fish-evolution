@@ -66,11 +66,67 @@ export interface SelectedFish {
 
 export type Speed = 0 | 1 | 10 | 50 | 'max';
 
+/** 0 is the left arena side, 1 the right. */
+export type Side = 0 | 1;
+
+/** Where the brain of an arena side comes from. `index` is in the leader history, oldest first. */
+export type BrainChoice = { kind: 'random' } | { kind: 'leader' } | { kind: 'selected' } | { kind: 'history'; index: number };
+
+export type ArenaSpeed = 0 | 1 | 10;
+
+export interface ArenaSideView {
+  /** `scene.selected` is the fish whose brain the UI draws. */
+  scene: Snapshot;
+  /** Food eaten by the side since the start. */
+  foodEaten: number;
+  /** The brain of the side, also when all its fish are dead. */
+  genome: Genome;
+}
+
+/** One leader history entry as the brain picker shows it. */
+export interface LeaderRow {
+  tick: number;
+  living: number;
+  hidden: number;
+  conns: number;
+  colorM: ColorGenes;
+  colorF: ColorGenes;
+}
+
+export interface ArenaSnapshot {
+  speed: ArenaSpeed;
+  choices: [BrainChoice, BrainChoice];
+  sides: [ArenaSideView, ArenaSideView];
+  /** Oldest first. */
+  history: LeaderRow[];
+  hasLeader: boolean;
+  /** The selected fish of the main world is alive. */
+  hasSelected: boolean;
+}
+
 export type ToWorker =
   | { type: 'speed'; speed: Speed }
   | { type: 'select'; id: number | null }
   | { type: 'reset'; seed: number }
   /** Save the world now, for example before the tab closes. */
-  | { type: 'save' };
+  | { type: 'save' }
+  /** Open the arena; the main world pauses. */
+  | { type: 'arenaOpen'; seed: number }
+  | { type: 'arenaClose' }
+  | { type: 'arenaBrain'; side: Side; choice: BrainChoice }
+  /** With a seed, a new start; without, the same start again. */
+  | { type: 'arenaRestart'; seed?: number }
+  | { type: 'arenaSpeed'; speed: ArenaSpeed }
+  | { type: 'arenaSelect'; side: Side; id: number | null }
+  /** Send the main world as a file. */
+  | { type: 'export' }
+  /** Replace the main world with the world in a file. */
+  | { type: 'import'; data: ArrayBuffer };
 
-export type FromWorker = { type: 'snapshot'; snap: Snapshot };
+/** While the arena is open, the worker sends arena messages instead of snapshots. */
+export type FromWorker =
+  | { type: 'snapshot'; snap: Snapshot }
+  | { type: 'arena'; arena: ArenaSnapshot }
+  /** A gzipped save file; `tick` is the main world tick. */
+  | { type: 'exported'; data: ArrayBuffer; tick: number }
+  | { type: 'importResult'; error: string | null };
