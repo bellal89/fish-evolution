@@ -1,15 +1,17 @@
 import { expect, test } from 'vitest';
-import type { FromWorker, Snapshot } from '../../src/protocol';
+import type { ArenaSnapshot, FromWorker, Snapshot } from '../../src/protocol';
 import { CONFIG } from '../../src/sim/config';
-import { SimLoop } from '../../src/worker/loop';
+import { World } from '../../src/sim/world';
+import { SimLoop, type LoopSave } from '../../src/worker/loop';
 
 const FRAME_MS = 1000 / 60;
 
-function setup(clock: () => number = () => 0) {
+function setup(clock: () => number = () => 0, from: number | LoopSave = 1) {
   const msgs: FromWorker[] = [];
-  const loop = new SimLoop(1, m => msgs.push(m), clock);
-  const snaps = (): Snapshot[] => msgs.map(m => m.snap);
-  return { loop, msgs, snaps };
+  const loop = new SimLoop(from, m => msgs.push(m), clock);
+  const snaps = (): Snapshot[] => msgs.flatMap(m => (m.type === 'snapshot' ? [m.snap] : []));
+  const arenas = (): ArenaSnapshot[] => msgs.flatMap(m => (m.type === 'arena' ? [m.arena] : []));
+  return { loop, msgs, snaps, arenas };
 }
 
 test('speed 0 does not advance', () => {
@@ -128,4 +130,85 @@ test('select chooses a fish', () => {
   loop.handle({ type: 'select', id: null });
   loop.frame(2000);
   expect(snaps().at(-1)!.selected).toBeNull();
+});
+
+test('the main world pauses while the arena is open', () => {
+  const { loop, msgs, snaps } = setup();
+  loop.handle({ type: 'speed', speed: 10 });
+  loop.frame(0);
+  loop.frame(100);
+  const t0 = snaps().at(-1)!.tick;
+  expect(t0).toBeGreaterThan(0);
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  const n = msgs.length;
+  loop.frame(200);
+  loop.frame(300);
+  expect(msgs.slice(n).map(m => m.type)).toEqual(['arena', 'arena']);
+  loop.handle({ type: 'arenaClose' });
+  loop.frame(300);
+  expect(msgs.at(-1)!.type).toBe('snapshot');
+  expect(snaps().at(-1)!.tick).toBe(t0);
+  loop.frame(400);
+  expect(snaps().at(-1)!.tick).toBeGreaterThan(t0);
+});
+
+test('both arena sides step in lockstep and one message carries both', () => {
+  let t = 0;
+  const { loop, arenas } = setup(() => (t += 5));
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  loop.handle({ type: 'arenaSpeed', speed: 10 });
+  for (let i = 0; i < 4; i++) loop.frame(i * 100);
+  for (const a of arenas()) expect(a.sides[0].scene.tick).toBe(a.sides[1].scene.tick);
+  const tick = arenas().at(-1)!.sides[0].scene.tick;
+  expect(tick).toBeGreaterThan(0);
+  expect(arenas().at(-1)!.speed).toBe(10);
+  loop.handle({ type: 'arenaSpeed', speed: 0 });
+  loop.frame(500);
+  loop.frame(600);
+  expect(arenas().at(-1)!.sides[0].scene.tick).toBe(tick);
+});
+
+test('arena defaults to Random when no leader exists', () => {
+  const { loop, arenas } = setup();
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  loop.frame(0);
+  const a = arenas()[0];
+  expect(a.choices).toEqual([{ kind: 'random' }, { kind: 'random' }]);
+  expect(a.hasLeader).toBe(false);
+  expect(a.hasSelected).toBe(false);
+});
+
+test('arena right side starts with the leader brain', () => {
+  const w = new World(1);
+  const [a, b] = w.fish;
+  w.lineage.born(999_999, [a.id, b.id], a.genome, a.traits);
+  const { loop, arenas } = setup(() => 0, { world: w.save(), history: [] });
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  loop.frame(0);
+  const s = arenas()[0];
+  expect(s.choices[1]).toEqual({ kind: 'leader' });
+  expect(s.sides[1].genome).toBe(a.genome);
+  expect(s.hasLeader).toBe(true);
+});
+
+test('picking the selected fish and a history entry uses their brains', () => {
+  const w = new World(1);
+  const [f, , owner] = w.fish;
+  w.leaderHistory.push({ tick: CONFIG.LEADER_SNAPSHOT_TICKS, living: 3, genome: owner.genome, traits: owner.traits });
+  const { loop, arenas } = setup(() => 0, { world: w.save(), history: [] });
+  loop.handle({ type: 'select', id: f.id });
+  loop.handle({ type: 'arenaOpen', seed: 5 });
+  loop.handle({ type: 'arenaBrain', side: 0, choice: { kind: 'selected' } });
+  loop.handle({ type: 'arenaBrain', side: 1, choice: { kind: 'history', index: 0 } });
+  loop.frame(0);
+  const s = arenas()[0];
+  expect(s.hasSelected).toBe(true);
+  expect(s.choices).toEqual([{ kind: 'selected' }, { kind: 'history', index: 0 }]);
+  expect(s.sides[0].genome).toBe(f.genome);
+  expect(s.sides[1].genome).toBe(owner.genome);
+  expect(s.sides[1].scene.fish[0].color).toEqual(owner.traits.colorM);
+  expect(s.history).toEqual([{
+    tick: CONFIG.LEADER_SNAPSHOT_TICKS, living: 3, hidden: 0, conns: owner.genome.conns.length,
+    colorM: owner.traits.colorM, colorF: owner.traits.colorF,
+  }]);
 });

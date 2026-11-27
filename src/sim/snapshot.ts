@@ -1,4 +1,5 @@
-import type { Snapshot } from '../protocol';
+import { genomeSize } from '../neat/genome';
+import type { LeaderRow, Snapshot } from '../protocol';
 import { CONFIG } from './config';
 import type { StatPoint } from './stats';
 import { expressedColor } from './traits';
@@ -38,4 +39,11 @@ export function makeSnapshot(w: World, selectedId: number | null, history?: Stat
     leader: lead ? { genome: lead.genome, living: lead.living } : null,
     ...(history ? { stats: history } : {}),
   };
+}
+
+export function leaderRows(w: World): LeaderRow[] {
+  return w.leaderHistory.map(e => {
+    const { hidden, enabledConns } = genomeSize(e.genome);
+    return { tick: e.tick, living: e.living, hidden, conns: enabledConns, colorM: e.traits.colorM, colorF: e.traits.colorF };
+  });
 }

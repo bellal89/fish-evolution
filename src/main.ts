@@ -30,6 +30,7 @@ document.addEventListener('visibilitychange', () => {
 
 let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
+  if (e.data.type !== 'snapshot') return;
   snap = e.data.snap;
   controls.update(snap);
   if (snap.stats) charts.update(snap.stats);

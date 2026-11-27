@@ -83,11 +83,41 @@ export interface ArenaSideView {
   genome: Genome;
 }
 
+/** One leader history entry as the brain picker shows it. */
+export interface LeaderRow {
+  tick: number;
+  living: number;
+  hidden: number;
+  conns: number;
+  colorM: ColorGenes;
+  colorF: ColorGenes;
+}
+
+export interface ArenaSnapshot {
+  speed: ArenaSpeed;
+  choices: [BrainChoice, BrainChoice];
+  sides: [ArenaSideView, ArenaSideView];
+  /** Oldest first. */
+  history: LeaderRow[];
+  hasLeader: boolean;
+  /** The selected fish of the main world is alive. */
+  hasSelected: boolean;
+}
+
 export type ToWorker =
   | { type: 'speed'; speed: Speed }
   | { type: 'select'; id: number | null }
   | { type: 'reset'; seed: number }
   /** Save the world now, for example before the tab closes. */
-  | { type: 'save' };
+  | { type: 'save' }
+  /** Open the arena; the main world pauses. */
+  | { type: 'arenaOpen'; seed: number }
+  | { type: 'arenaClose' }
+  | { type: 'arenaBrain'; side: Side; choice: BrainChoice }
+  /** With a seed, a new start; without, the same start again. */
+  | { type: 'arenaRestart'; seed?: number }
+  | { type: 'arenaSpeed'; speed: ArenaSpeed }
+  | { type: 'arenaSelect'; side: Side; id: number | null };
 
-export type FromWorker = { type: 'snapshot'; snap: Snapshot };
+/** While the arena is open, only arena messages go out. */
+export type FromWorker = { type: 'snapshot'; snap: Snapshot } | { type: 'arena'; arena: ArenaSnapshot };
