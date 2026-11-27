@@ -1,5 +1,6 @@
 import './style.css';
 import type { FromWorker, Snapshot, ToWorker } from './protocol';
+import { mountArena } from './ui/arena';
 import { mountCharts } from './ui/charts';
 import { mountControls } from './ui/controls';
 import { pickFish } from './ui/pick';
@@ -10,8 +11,11 @@ import { fitView, screenToWorld, type View } from './ui/view';
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <canvas id="tank"></canvas><div id="bar"></div>
-  <aside id="side"><div id="inspector"></div><div id="charts"></div></aside>`;
+  <aside id="side"><div id="inspector"></div><div id="charts"></div></aside>
+  <div id="arena" hidden></div>`;
 const canvas = document.getElementById('tank') as HTMLCanvasElement;
+const side = document.getElementById('side')!;
+const arenaRoot = document.getElementById('arena')!;
 const ctx = canvas.getContext('2d')!;
 
 const worker = new Worker(new URL('./worker/sim.worker.ts', import.meta.url), { type: 'module' });
@@ -22,7 +26,15 @@ const send = (m: ToWorker): void => {
   if (m.type === 'reset') inspector.setWanted(null);
   worker.postMessage(m);
 };
-const controls = mountControls(document.getElementById('bar')!, send);
+const arena = mountArena(arenaRoot, send);
+let arenaOpen = false;
+const controls = mountControls(document.getElementById('bar')!, send, open => {
+  arenaOpen = open;
+  send(open ? { type: 'arenaOpen', seed: Date.now() } : { type: 'arenaClose' });
+  canvas.hidden = open;
+  side.hidden = open;
+  arenaRoot.hidden = !open;
+});
 // The tab may close after it hides; save then so that little progress is lost.
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) send({ type: 'save' });
@@ -30,7 +42,10 @@ document.addEventListener('visibilitychange', () => {
 
 let snap: Snapshot | null = null;
 worker.onmessage = (e: MessageEvent<FromWorker>) => {
-  if (e.data.type !== 'snapshot') return;
+  if (e.data.type === 'arena') {
+    arena.update(e.data.arena);
+    return;
+  }
   snap = e.data.snap;
   controls.update(snap);
   if (snap.stats) charts.update(snap.stats);
@@ -60,7 +75,8 @@ window.addEventListener('keydown', e => {
 });
 
 function frame(ms: number): void {
-  if (snap) {
+  if (arenaOpen) arena.draw(ms / 1000);
+  else if (snap) {
     view = fitView(canvas.width, canvas.height, snap.tankW, snap.tankH);
     drawAquarium(ctx, snap, view, ms / 1000);
   }
