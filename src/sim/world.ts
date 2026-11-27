@@ -1,4 +1,5 @@
 import { InnovationTracker, createMinimalGenome } from '../neat/genome';
+import type { ArenaSetup } from './arena';
 import { CONFIG } from './config';
 import {
   advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
@@ -77,6 +78,8 @@ export class World {
   extinct = false;
 
   private readonly rng: Rng;
+  /** An arena world has no mating. */
+  private readonly arena: boolean;
   private readonly tracker = new InnovationTracker(INPUT_COUNT + 1 + OUTPUT_COUNT);
   private readonly controller = new ScriptedPredator();
   private readonly fishGrid = new SpatialGrid<Fish>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
@@ -88,8 +91,9 @@ export class World {
   private readonly senseCtx: SenseContext;
   private readonly predView: PredatorView;
 
-  /** Creates a new world from a seed, or continues a saved one. */
-  constructor(from: number | WorldSave) {
+  /** Creates a new world from a seed, or continues a saved one. With `arena`, it is one side of the arena. */
+  constructor(from: number | WorldSave, arena?: ArenaSetup) {
+    this.arena = arena !== undefined;
     if (typeof from === 'number') {
       const { TANK_W: w, TANK_H: h } = CONFIG;
       const waterH = h - CONFIG.SAND_H;
@@ -97,9 +101,11 @@ export class World {
       this.field = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, w, h);
       this.food = new FoodSystem(this.rng, w, h);
 
-      for (let i = 0; i < CONFIG.INITIAL_FISH; i++) {
-        const traits = randomTraits(this.rng);
-        const genome = createMinimalGenome(INPUT_COUNT, OUTPUT_COUNT, this.rng, this.tracker);
+      const count = arena ? CONFIG.ARENA_FISH : CONFIG.INITIAL_FISH;
+      for (let i = 0; i < count; i++) {
+        // Arena fish take no random draws for their genes, so the layout does not depend on the brain.
+        const traits = arena ? arena.traits : randomTraits(this.rng);
+        const genome = arena ? arena.genome : createMinimalGenome(INPUT_COUNT, OUTPUT_COUNT, this.rng, this.tracker);
         const x = this.rng.range(traits.size, w - traits.size);
         const y = this.rng.range(traits.size, waterH - traits.size);
         const f = createFish(this.newId(), x, y, i % 2 === 0 ? 'M' : 'F', traits, genome, CONFIG.INITIAL_FISH_ENERGY, null);
@@ -154,7 +160,7 @@ export class World {
     this.rebuildGrids();
     this.stepFish();
     this.rebuildFishGrid();
-    this.stepMating();
+    if (!this.arena) this.stepMating();
     this.stepPredators();
     this.hatchEggs();
     this.removeDead();

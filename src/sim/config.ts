@@ -183,6 +183,8 @@ export const CONFIG = {
 
   // World
   INITIAL_FISH: 150,
+  /** Fish per arena side. */
+  ARENA_FISH: 5,
   /** Energy each initial fish starts with. */
   INITIAL_FISH_ENERGY: 80,
   /** All nutrients in the tank. */
