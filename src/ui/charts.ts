@@ -79,8 +79,8 @@ const ROWS: Row[] = [
 ];
 
 const SEXES = [
-  { sym: '♂', title: 'Male hue', hue: (p: StatPoint) => p.avgHueM, pat: (p: StatPoint) => p.topPatternM },
-  { sym: '♀', title: 'Female hue', hue: (p: StatPoint) => p.avgHueF, pat: (p: StatPoint) => p.topPatternF },
+  { sym: '♂', title: 'Most common male hue', hue: (p: StatPoint) => p.topHueM, pat: (p: StatPoint) => p.topPatternM },
+  { sym: '♀', title: 'Most common female hue', hue: (p: StatPoint) => p.topHueF, pat: (p: StatPoint) => p.topPatternF },
 ];
 
 const SPARK_W = 420, SPARK_H = 36;

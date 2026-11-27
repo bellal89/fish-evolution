@@ -1,6 +1,8 @@
 # Fish evolution
 
-A 2D aquarium in the browser where fish evolve on their own. Each fish has a NEAT neural network for a brain and genes for body (size, speed, vision, lifespan, mating threshold) and color (hue, brightness, pattern, separate for males and females). There is no fitness function and no generations: fish eat algae, plankton and eggs, mate with partners whose color they like, and get eaten by a scripted predator that spots fish more easily when they contrast with the background. Nutrients go round a closed cycle (fish, waste, fertilizer, algae and plankton, back to fish), so the tank holds only as many fish as the nutrients allow. A spot of light sweeps the tank from wall to wall every two sim minutes, and plankton grows mostly under it and dies off in the dark. Sometimes the population dies out; press **⟲ Restart** then. Whatever survives and breeds is what you see.
+**Live demo:** https://bellal89.github.io/fish-evolution/
+
+A 2D aquarium in the browser where fish evolve on their own. Each fish has a NEAT neural network for a brain and genes for body (size, speed, vision, lifespan, mating threshold) and color (hue, brightness, pattern, separate for males and females). There is no fitness function and no generations: fish eat algae, plankton and eggs, mate with partners whose color they like, and get eaten by a scripted predator that spots fish more easily when they contrast with the background. Nutrients go round a closed cycle (fish, waste, fertilizer, algae and plankton, back to fish), so the tank holds only as many fish as the nutrients allow. A spot of light sweeps the tank from wall to wall every two sim minutes, and plankton grows mostly under it and dies off in the dark. Fish smell waste and dead bodies. A fish that touches waste ages faster. A dead body has three times that effect. A fish that dies of hunger or old age sinks as a gray body, lies on the sand and dissolves into fertilizer. Sometimes the population dies out; press **⟲ Restart** then. Whatever survives and breeds is what you see.
 
 The simulation runs in your browser. Each visitor has a separate world. The browser saves the world every 30 seconds (IndexedDB), and the next visit continues it. **⟲ Restart** starts a new world.
 
@@ -30,5 +32,5 @@ npx tsx scripts/headless.ts [seed] [ticks]
 - **Escapes**: share of predator chases that ended without a kill.
 - **Food per fish**: food eaten per fish between samples.
 - **Matings per fish**: matings per fish between samples.
-- **Male hue**, **Female hue**, **Top pattern**: the average expressed hue over time and the most common pattern now, per sex.
-- **Inspector** (click a fish): sex, age, energy, children, both color variants, body and mating genes, and its brain with live activations. The leader tab shows the leader's brain.
+- **Most common male hue**, **Most common female hue**, **Top pattern**: the most common expressed hue (in 15° steps) over time and the most common pattern now, per sex.
+- **Inspector** (click a fish): sex, age, energy, children, how much waste aged it, both color variants, body and mating genes, and its brain with live activations. The leader tab shows the leader's brain.

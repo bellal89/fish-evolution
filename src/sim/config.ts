@@ -99,6 +99,12 @@ export const CONFIG = {
   WASTE_DISSOLVE_RATE: 0.002,
   /** Ticks a waste particle lies on the bottom before dissolving fully. */
   WASTE_BOTTOM_TICKS: 120,
+  /** A dead fish's body sinks this fast, px/tick (3 times the waste). */
+  BODY_SINK_SPEED: 1.5,
+  /** A body rests this far below the floor line, as a fraction of its size. */
+  BODY_REST_DEPTH: 0.5,
+  /** Ticks a body lies on the bottom while it dissolves into the field (10 s). */
+  BODY_DISSOLVE_TICKS: 600,
 
   // Senses
   /** Vision rays per fish, spread evenly across the view angle. */
@@ -136,6 +142,10 @@ export const CONFIG = {
   EXCRETE_AMOUNT: 2,
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
+  /** Extra age per tick while a fish touches waste (N). */
+  WASTE_AGE_TICKS: 0.5,
+  /** A dead body ages a fish this many times faster than waste (K). */
+  BODY_AGE_MULT: 3,
 
   // Predator, reproduction, lineage
   /** Body radius. */
@@ -176,9 +186,9 @@ export const CONFIG = {
   /** All nutrients in the tank. */
   TOTAL_NUTRIENTS: 18000,
   /** Most algae biomass one bite takes: a full cell lasts ALGAE_MAX / BITE bites. */
-  BITE: 1,
+  BITE: 2,
   /** Ticks between two algae bites of one fish. */
-  BITE_COOLDOWN: 30,
+  BITE_COOLDOWN: 5,
   /** A fish touches food within its size plus this. */
   EAT_REACH: 4,
   /** Ticks a predator stays sated after eating a fish. */
@@ -191,6 +201,8 @@ export const CONFIG = {
   STATS_EVERY: 300,
   /** History length at which adjacent points are merged. */
   STATS_MAX: 600,
+  /** Sectors of the hue circle for the most common hue (24 sectors of 15°). */
+  HUE_BINS: 24,
 
   // UI
   /** Radius in px for picking a fish with a click. */

@@ -16,12 +16,33 @@ export interface Rock {
   ry: number;
 }
 export interface Waste { x: number; y: number; vy: number; amount: number; bottomTicks: number }
+/** A dead fish. It holds all the fish's nutrients and dissolves on the bottom. */
+export interface Body {
+  x: number;
+  y: number;
+  amount: number;
+  /** Amount at death. */
+  full: number;
+  size: number;
+  heading: number;
+  bottomTicks: number;
+}
 
-/** Algae, plankton, waste and rocks. */
+/** Waste or a dead body, as the smell and the harm check see it. */
+export interface Dirt {
+  x: number;
+  y: number;
+  amount: number;
+  /** 0 for a waste speck, else the body size. */
+  size: number;
+}
+
+/** Algae, plankton, waste, dead bodies and rocks. */
 export class FoodSystem {
   algae: AlgaeCell[] = [];
   plankton: Plankton[] = [];
   waste: Waste[] = [];
+  bodies: Body[] = [];
   readonly rocks: Rock[] = [];
   private readonly floorY: number;
 
@@ -55,6 +76,7 @@ export class FoodSystem {
     this.dieInDark(field, rng, tick);
     this.movePlankton(rng);
     this.moveWaste(field);
+    this.moveBodies(field);
   }
 
   private growAlgae(field: FertilizerField): void {
@@ -112,6 +134,26 @@ export class FoodSystem {
     this.waste = alive;
   }
 
+  /** A body sinks without loss, then releases an equal share per tick and goes away on the last tick. */
+  private moveBodies(field: FertilizerField): void {
+    const alive: Body[] = [];
+    for (const b of this.bodies) {
+      const restY = this.floorY + CONFIG.BODY_REST_DEPTH * b.size;
+      if (b.y < restY) {
+        b.y = Math.min(b.y + CONFIG.BODY_SINK_SPEED, restY);
+      } else if (++b.bottomTicks === CONFIG.BODY_DISSOLVE_TICKS) {
+        field.add(b.x, b.y, b.amount);
+        continue;
+      } else {
+        const out = b.full / CONFIG.BODY_DISSOLVE_TICKS;
+        field.add(b.x, b.y, out);
+        b.amount -= out;
+      }
+      alive.push(b);
+    }
+    this.bodies = alive;
+  }
+
   /** Removes up to `amt` biomass from the cell; returns what was eaten. */
   eatAlgae(cell: AlgaeCell, amt: number): number {
     const eaten = Math.min(amt, cell.biomass);
@@ -131,11 +173,16 @@ export class FoodSystem {
     this.waste.push({ x, y, vy: CONFIG.WASTE_SINK_SPEED, amount: amt, bottomTicks: 0 });
   }
 
+  addBody(x: number, y: number, amount: number, size: number, heading: number): void {
+    this.bodies.push({ x, y, amount, full: amount, size, heading, bottomTicks: 0 });
+  }
+
   total(): number {
     let s = 0;
     for (const a of this.algae) s += a.biomass;
     for (const p of this.plankton) s += p.amount;
     for (const w of this.waste) s += w.amount;
+    for (const b of this.bodies) s += b.amount;
     return s;
   }
 }

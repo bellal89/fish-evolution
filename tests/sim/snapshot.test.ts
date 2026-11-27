@@ -45,3 +45,17 @@ test('snapshot shows the expressed color, scaled algae and the leader', () => {
   expect(snap.food.algae[0].biomass).toBe(w.food.algae[0].biomass / CONFIG.ALGAE_MAX);
   expect(snap.leader?.living).toBe(1);
 });
+
+test('snapshot lists bodies with their shape and fade', () => {
+  const { w, s } = setup();
+  w.food.addBody(300, 200, 40, 12, 0.5);
+  w.food.bodies[0].amount = 10;
+  const snap = makeSnapshot(w, s, null, false);
+  expect(snap.food.bodies).toEqual([{ x: 300, y: 200, size: 12, heading: 0.5, fade: 0.25 }]);
+});
+
+test('selected view carries wasteAge', () => {
+  const { w, s } = setup();
+  w.fish[0].wasteAge = 123;
+  expect(makeSnapshot(w, s, w.fish[0].id, false).selected!.wasteAge).toBe(123);
+});

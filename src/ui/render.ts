@@ -2,7 +2,7 @@ import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
 import { rayAngle } from '../sim/senses';
 import { lightCenter } from '../sim/light';
-import type { FishView, PredatorSnap, Rock, SelectedFish, Snapshot } from '../protocol';
+import type { FishView, FoodView, PredatorSnap, Rock, SelectedFish, Snapshot } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
 
@@ -65,6 +65,7 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: Snapshot, vie
   for (const r of scene.rocks) drawRock(ctx, r);
   for (const a of scene.food.algae) drawAlgae(ctx, a.x, a.y, a.biomass, t);
   drawParticles(ctx, scene);
+  for (const b of scene.food.bodies) drawBody(ctx, b);
   for (const f of scene.fish) drawFish(ctx, f, t);
   for (const p of scene.predators) drawPredator(ctx, p, t);
   if (scene.selected) drawSelection(ctx, scene, scene.selected);
@@ -189,6 +190,41 @@ function enterFrame(ctx: CanvasRenderingContext2D, x: number, y: number, heading
   ctx.translate(x, y);
   ctx.rotate(heading);
   if (Math.cos(heading) < 0) ctx.scale(1, -1);
+}
+
+/** A dead fish: a gray silhouette, belly up, level, that fades as it dissolves. */
+function drawBody(ctx: CanvasRenderingContext2D, b: FoodView['bodies'][number]): void {
+  const s = b.size * FISH_DRAW_SCALE;
+  const hl = s * 1.3;
+  const hh = s * 0.6;
+  ctx.save();
+  ctx.globalAlpha = b.fade;
+  // Lie level, facing the side the fish faced.
+  enterFrame(ctx, b.x, b.y, Math.cos(b.heading) < 0 ? Math.PI : 0);
+  ctx.scale(1, -1);
+  ctx.fillStyle = '#9a9ea3';
+  ctx.beginPath();
+  ctx.moveTo(-hl + 2, 0);
+  ctx.lineTo(-hl - s * 0.7, -s * 0.45);
+  ctx.lineTo(-hl - s * 0.5, 0);
+  ctx.lineTo(-hl - s * 0.7, s * 0.45);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(hl * 0.25, -hh * 0.9);
+  ctx.quadraticCurveTo(-hl * 0.2, -hh * 1.5, -hl * 0.6, -hh * 0.75);
+  ctx.closePath();
+  ctx.fill();
+  bodyPath(ctx, hl, hh);
+  ctx.fill();
+  ctx.strokeStyle = '#4a4d51';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  ctx.fillStyle = '#33363a';
+  ctx.beginPath();
+  ctx.arc(hl * 0.6, -hh * 0.2, hh * 0.15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
 }
 
 function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): void {

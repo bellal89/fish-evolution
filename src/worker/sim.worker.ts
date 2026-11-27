@@ -4,7 +4,7 @@ import { CONFIG } from '../sim/config';
 import { SimLoop, type LoopSave } from './loop';
 
 /** Bump when the saved state changes shape, so that an old save is ignored. */
-const SAVE_VERSION = 1;
+const SAVE_VERSION = 2;
 const SAVE_KEY = 'world';
 
 function openDb(): Promise<IDBDatabase> {

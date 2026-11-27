@@ -1,9 +1,9 @@
 import { InnovationTracker, createMinimalGenome } from '../neat/genome';
 import { CONFIG } from './config';
 import {
-  advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, type Fish,
+  advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
 } from './fish';
-import { FoodSystem, type AlgaeCell, type Plankton } from './food';
+import { FoodSystem, type AlgaeCell, type Dirt, type Plankton } from './food';
 import { Lineage } from './lineage';
 import { FertilizerField } from './nutrients';
 import { ScriptedPredator, createPredator, stepPredator, type Predator, type PredatorView } from './predator';
@@ -78,6 +78,7 @@ export class World {
   private readonly controller = new ScriptedPredator();
   private readonly fishGrid = new SpatialGrid<Fish>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
   private readonly foodGrid = new SpatialGrid<FoodItem>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
+  private readonly dirtGrid = new SpatialGrid<Dirt>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
   private alarms: Alarm[] = [];
   private nextId = 1;
   private readonly newId = () => this.nextId++;
@@ -125,7 +126,7 @@ export class World {
     }
 
     this.senseCtx = {
-      food: this.foodGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
+      food: this.foodGrid, dirt: this.dirtGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
       tick: 0, bg, tankW: CONFIG.TANK_W, tankH: CONFIG.TANK_H,
     };
     this.predView = { fish: this.fishGrid, eggs: this.eggs, bg };
@@ -171,6 +172,9 @@ export class World {
     for (const a of this.food.algae) this.foodGrid.insert({ x: a.x, y: a.y, amount: a.biomass, kind: 'algae', src: a });
     for (const p of this.food.plankton) this.foodGrid.insert({ x: p.x, y: p.y, amount: p.amount, kind: 'plankton', src: p });
     for (const e of this.eggs) this.foodGrid.insert({ x: e.x, y: e.y, amount: e.energy, kind: 'egg', src: e });
+    this.dirtGrid.clear();
+    for (const d of this.food.waste) this.dirtGrid.insert({ x: d.x, y: d.y, amount: d.amount, size: 0 });
+    for (const b of this.food.bodies) this.dirtGrid.insert({ x: b.x, y: b.y, amount: b.amount, size: b.size });
     this.senseCtx.alarms = this.alarms = this.alarms.filter(a => this.tick - a.tick < CONFIG.ALARM_TICKS);
     this.senseCtx.tick = this.tick;
     this.predView.eggs = this.eggs;
@@ -185,6 +189,7 @@ export class World {
       f.lastOutputs = f.brain.activate(f.lastInputs);
       applyOutputs(f, f.lastOutputs, TANK_W, TANK_H);
       this.eat(f);
+      f.wasteAge += wasteHarm(f, this.dirtGrid.query(f.x, f.y, f.traits.size + MAX_FISH_SIZE + CONFIG.EAT_REACH));
       payCost(f);
       const waste = excrete(f);
       if (waste > 0) this.food.addWaste(f.x, f.y, waste);
@@ -280,7 +285,9 @@ export class World {
     const alive: Fish[] = [];
     for (const f of this.fish) {
       if (!isDead(f)) { alive.push(f); continue; }
-      this.food.addWaste(f.x, f.y, f.energy + f.gut);
+      // A fish can excrete its gut on the tick its energy runs out; then there is nothing to leave.
+      const left = f.energy + f.gut;
+      if (left > 0) this.food.addBody(f.x, f.y, left, f.traits.size, f.heading);
       this.recordDeath(f);
     }
     this.fish = alive;

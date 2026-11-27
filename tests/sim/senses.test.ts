@@ -15,6 +15,7 @@ import { randomTraits, type ColorGenes } from '../../src/sim/traits';
 const W = CONFIG.TANK_W;
 const H = CONFIG.TANK_H;
 type Food = { x: number; y: number; amount: number };
+const IN = (label: string) => INPUT_LABELS.indexOf(label);
 
 function makeFish(x: number, y: number, over: Partial<SensingFish> = {}): SensingFish {
   const traits = randomTraits(new Rng(7));
@@ -22,7 +23,7 @@ function makeFish(x: number, y: number, over: Partial<SensingFish> = {}): Sensin
   traits.viewRange = 200;
   traits.size = 6;
   traits.maxSpeed = 3;
-  return { x, y, heading: 0, speed: 0, energy: 50, age: 0, sex: 'M', traits, ready: false, ...over };
+  return { x, y, heading: 0, speed: 0, energy: 50, age: 0, wasteAge: 0, sex: 'M', traits, ready: false, ...over };
 }
 
 function makeCtx(
@@ -30,12 +31,15 @@ function makeCtx(
   food: Food[] = [],
   predators: SensingPredator[] = [],
   bg = { hue: 0.5, brightness: 0.5 },
+  dirt: Food[] = [],
 ): SenseContext {
   const fg = new SpatialGrid<SensingFish>(100, W, H);
   fish.forEach((f) => fg.insert(f));
   const foodGrid = new SpatialGrid<Food>(100, W, H);
   food.forEach((f) => foodGrid.insert(f));
-  return { food: foodGrid, fish: fg, predators, alarms: [], tick: 0, bg: () => bg, tankW: W, tankH: H };
+  const dirtGrid = new SpatialGrid<Food>(100, W, H);
+  dirt.forEach((f) => dirtGrid.insert(f));
+  return { food: foodGrid, dirt: dirtGrid, fish: fg, predators, alarms: [], tick: 0, bg: () => bg, tankW: W, tankH: H };
 }
 
 function run(f: SensingFish, ctx: SenseContext): Float32Array {
@@ -71,7 +75,7 @@ test('a slow predator behind is neither seen nor felt', () => {
   const me = makeFish(100, 450);
   const out = run(me, makeCtx([me], [], [{ x: 60, y: 450, speed: CONFIG.LATERAL_MIN_SPEED, maxSpeed: 4, size: 20 }]));
   for (let r = 0; r < CONFIG.RAY_COUNT; r++) expect(out[r * 3 + 2]).toBe(0);
-  for (let i = 16; i < 20; i++) expect(out[i]).toBe(0);
+  for (let i = IN('felt front'); i <= IN('felt right'); i++) expect(out[i]).toBe(0);
 });
 
 test('ray 0 looks to the left', () => {
@@ -118,14 +122,28 @@ test('a camouflaged fish is seen at a shorter range than a contrasting fish', ()
 test('smell gradient points to food side', () => {
   const me = makeFish(500, 450);
   const out = run(me, makeCtx([me], [{ x: 550, y: 400, amount: 1 }]));
-  expect(out[20]).toBeGreaterThan(0);
+  expect(out[IN('smell')]).toBeGreaterThan(0);
   const mirror = run(me, makeCtx([me], [{ x: 550, y: 500, amount: 1 }]));
-  expect(mirror[20]).toBeLessThan(0);
+  expect(mirror[IN('smell')]).toBeLessThan(0);
 });
 
 test('food just beyond smell range is not smelled', () => {
   const me = makeFish(500, 450);
-  expect(run(me, makeCtx([me], [{ x: 500 + CONFIG.SMELL_RADIUS, y: 430, amount: 1 }]))[20]).toBe(0);
+  expect(run(me, makeCtx([me], [{ x: 500 + CONFIG.SMELL_RADIUS, y: 430, amount: 1 }]))[IN('smell')]).toBe(0);
+});
+
+test('waste smell points to the waste side, food does not count', () => {
+  const ws = IN('waste smell');
+  const me = makeFish(500, 450);
+  expect(run(me, makeCtx([me], [], [], undefined, [{ x: 550, y: 400, amount: 1 }]))[ws]).toBeGreaterThan(0);
+  expect(run(me, makeCtx([me], [], [], undefined, [{ x: 550, y: 500, amount: 1 }]))[ws]).toBeLessThan(0);
+  expect(run(me, makeCtx([me], [{ x: 550, y: 400, amount: 1 }]))[ws]).toBe(0);
+});
+
+test('a larger amount of waste smells stronger', () => {
+  const me = makeFish(500, 450);
+  const waste = [{ x: 550, y: 400, amount: 1 }, { x: 550, y: 500, amount: 5 }];
+  expect(run(me, makeCtx([me], [], [], undefined, waste))[IN('waste smell')]).toBeLessThan(0);
 });
 
 test('alarm decays with age and distance cutoff', () => {
@@ -133,9 +151,9 @@ test('alarm decays with age and distance cutoff', () => {
   const ctx = makeCtx([me]);
   ctx.tick = 100;
   ctx.alarms = [{ x: 500, y: 400, tick: 100 - CONFIG.ALARM_TICKS / 2 }];
-  expect(run(me, ctx)[21]).toBeCloseTo(0.5, 5);
+  expect(run(me, ctx)[IN('alarm')]).toBeCloseTo(0.5, 5);
   ctx.alarms = [{ x: 500 + CONFIG.ALARM_RADIUS + 10, y: 450, tick: 100 }];
-  expect(run(me, ctx)[21]).toBe(0);
+  expect(run(me, ctx)[IN('alarm')]).toBe(0);
 });
 
 // 50 px from the wall ahead with viewRange 200.
@@ -146,7 +164,7 @@ test.each([
   ['surface', 500, 50, -Math.PI / 2],
 ])('wall input facing the %s wall', (_, x, y, heading) => {
   const me = makeFish(x, y, { heading });
-  expect(run(me, makeCtx([me]))[22]).toBeCloseTo(0.75, 5);
+  expect(run(me, makeCtx([me]))[IN('wall')]).toBeCloseTo(0.75, 5);
 });
 
 test('energy, age and ready inputs', () => {
@@ -154,9 +172,16 @@ test('energy, age and ready inputs', () => {
   me.energy = me.traits.mateThreshold / 2;
   me.age = me.traits.lifespanTicks / 4;
   const out = run(me, makeCtx([me]));
-  expect([out[23], out[24], out[25]]).toEqual([0.5, 0.25, 1].map(v => expect.closeTo(v, 5)));
+  expect([out[IN('energy')], out[IN('age')], out[IN('ready')]]).toEqual([0.5, 0.25, 1].map(v => expect.closeTo(v, 5)));
   me.ready = false;
-  expect(run(me, makeCtx([me]))[25]).toBe(0);
+  expect(run(me, makeCtx([me]))[IN('ready')]).toBe(0);
+});
+
+test('the age input counts waste age too', () => {
+  const me = makeFish(500, 450);
+  me.age = me.traits.lifespanTicks / 4;
+  me.wasteAge = me.traits.lifespanTicks / 4;
+  expect(run(me, makeCtx([me]))[IN('age')]).toBeCloseTo(0.5, 5);
 });
 
 test('mate appeal comes only from the opposite sex', () => {
@@ -168,7 +193,7 @@ test('mate appeal comes only from the opposite sex', () => {
     o.traits.colorF = o.traits.colorM = { hue: 0.3, brightness: 1, pattern: 'solid', patternCount: 1, hue2: 0 };
     return o;
   };
-  const appeal = (o: SensingFish) => run(me, makeCtx([me, o], [], [], { hue: 0.5, brightness: 0 }))[15];
+  const appeal = (o: SensingFish) => run(me, makeCtx([me, o], [], [], { hue: 0.5, brightness: 0 }))[IN('mate appeal')];
   expect(appeal(other('F'))).toBeGreaterThan(0);
   expect(appeal(other('M'))).toBe(0);
 });
@@ -180,7 +205,7 @@ test('all inputs finite and within [-1,1]', () => {
     const t = randomTraits(rng);
     fish.push({
       x: rng.range(0, W), y: rng.range(0, H), heading: rng.range(-Math.PI, Math.PI),
-      speed: rng.range(0, t.maxSpeed), energy: rng.range(0, 200), age: rng.range(0, t.lifespanTicks * 1.2),
+      speed: rng.range(0, t.maxSpeed), energy: rng.range(0, 200), age: rng.range(0, t.lifespanTicks * 1.2), wasteAge: 0,
       sex: rng.chance(0.5) ? 'M' : 'F', traits: t, ready: rng.chance(0.5),
     });
   }

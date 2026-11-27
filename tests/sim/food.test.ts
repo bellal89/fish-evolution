@@ -128,3 +128,25 @@ test('plankton dies off in the dark and dissolves; under the light it lives', ()
   expect(food.plankton.length).toBeLessThan(20);
   expect(f.total() + food.total()).toBeCloseTo(51, 6);
 });
+
+test('a body sinks, rests below the floor, dissolves in BODY_DISSOLVE_TICKS', () => {
+  const f = makeField(0);
+  const rng = new Rng(9);
+  const food = new FoodSystem(rng, W, H);
+  food.algae.length = 0;
+  food.addBody(800, 100, 50, 10, 0);
+  const b = food.bodies[0];
+  food.step(f, rng, 0);
+  expect(b.y).toBeGreaterThan(100);
+  expect(f.total()).toBe(0); // No release while it sinks.
+  let lastY = -1;
+  while (b.y !== lastY) { lastY = b.y; food.step(f, rng, 0); }
+  expect(b.y).toBe(H - CONFIG.SAND_H + CONFIG.BODY_REST_DEPTH * 10);
+  // The loop above ran one bottom tick already.
+  for (let i = 0; i < CONFIG.BODY_DISSOLVE_TICKS - 2; i++) food.step(f, rng, 0);
+  expect(food.bodies).toEqual([b]);
+  expect(b.amount).toBeCloseTo(50 / CONFIG.BODY_DISSOLVE_TICKS, 9);
+  food.step(f, rng, 0);
+  expect(food.bodies).toEqual([]);
+  expect(f.total() + food.total()).toBeCloseTo(50, 9);
+});
