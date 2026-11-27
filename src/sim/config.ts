@@ -33,9 +33,9 @@ export const CONFIG = {
     viewAngle: [0.8, 3],
     viewRange: [80, 400],
     /** Energy needed to mate. */
-    mateThreshold: [40, 150],
+    mateThreshold: [30, 100],
     investFraction: [0.1, 0.6],
-    lifespanTicks: [3600, 18000],
+    lifespanTicks: [9000, 24000],
     choosiness: [0, 1],
     brightness: [0, 1],
     patternCount: [1, 6],
@@ -78,11 +78,11 @@ export const CONFIG = {
   ALGAE_MAX: 10,
   /** Fraction of local fertilizer converted to algae biomass per tick. */
   ALGAE_GROWTH: 0.002,
-  PLANKTON_TRIES: 3,
+  PLANKTON_TRIES: 10,
   /** Local fertilizer needed before plankton can spawn. */
   PLANKTON_FERT_MIN: 0.5,
   PLANKTON_AMOUNT: 1,
-  PLANKTON_MAX: 150,
+  PLANKTON_MAX: 600,
   /** Std dev of the random velocity kick per tick. */
   PLANKTON_DRIFT: 0.02,
   PLANKTON_DAMPING: 0.98,
@@ -130,20 +130,20 @@ export const CONFIG = {
   MATURITY_TICKS: 600,
 
   // Predator, reproduction, lineage
-  PRED_SIZE: 30,
+  PRED_SIZE: 20,
   /** Cruise speed while patrolling, per tick. */
   PRED_PATROL_SPEED: 1.2,
   /** Chase speed, per tick; above the fastest fish. */
-  PRED_DASH_SPEED: 5,
+  PRED_DASH_SPEED: 4.2,
   /** Max heading change per tick at full turn, radians. */
-  PRED_TURN_RATE: 0.06,
+  PRED_TURN_RATE: 0.05,
   /** Field of view, radians. */
   PRED_VIEW_ANGLE: 1.6,
   /** Spotting range for a fully visible fish. */
   PRED_VIEW_RANGE: 350,
-  /** While sated the predator only notices fish this close. */
-  PRED_LAZY_RANGE: 80,
-  PRED_STAMINA_MAX: 300,
+  /** While sated the predator only notices fish this close; 0 = it does not hunt while sated. */
+  PRED_LAZY_RANGE: 0,
+  PRED_STAMINA_MAX: 25,
   /** Stamina lost per chasing tick. */
   PRED_STAMINA_DRAIN: 1,
   /** Stamina gained per resting or patrolling tick. */
@@ -156,24 +156,24 @@ export const CONFIG = {
   EGG_MIN_ENERGY: 10,
   MAX_CLUTCH: 4,
   /** Ticks after mating before a fish can mate again. */
-  MATE_COOLDOWN: 600,
+  MATE_COOLDOWN: 300,
   /** Ticks from laying to hatching. */
-  HATCH_TICKS: 300,
+  HATCH_TICKS: 100,
   /** Generations of descendants an ancestor's living count covers. */
   LINEAGE_DEPTH: 10,
 
   // World
-  INITIAL_FISH: 60,
+  INITIAL_FISH: 150,
   /** Energy each initial fish starts with. */
-  INITIAL_FISH_ENERGY: 100,
+  INITIAL_FISH_ENERGY: 80,
   /** All nutrients in the tank; the initial fertilizer is what the fish and algae do not hold. */
-  TOTAL_NUTRIENTS: 20000,
+  TOTAL_NUTRIENTS: 18000,
   /** Most algae biomass a fish eats per tick from one cell. */
   BITE: 0.5,
   /** A fish touches food within its size plus this. */
   EAT_REACH: 4,
   /** Ticks a predator stays sated after eating a fish. */
-  PRED_SATIETY_TICKS: 1800,
+  PRED_SATIETY_TICKS: 600,
   BG_WATER_BRIGHTNESS: 0.5,
   BG_SAND_BRIGHTNESS: 0.7,
   /** Cell size of the per-tick spatial grids. */

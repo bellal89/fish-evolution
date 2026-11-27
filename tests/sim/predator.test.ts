@@ -95,10 +95,6 @@ test('sated predator ignores distant fish', () => {
   sated.satiety = 100;
   ctl.decide(sated, view([far]), new Rng(1));
   expect(sated.state).toBe('patrol');
-  const near = conspicuousFish(2, 400 + CONFIG.PRED_LAZY_RANGE - 20, 300);
-  ctl.decide(sated, view([far, near]), new Rng(1));
-  expect(sated.state).toBe('chase');
-  expect(sated.targetId).toBe(2);
   const hungry = createPredator(400, 300, 0);
   ctl.decide(hungry, view([far]), new Rng(1));
   expect(hungry.state).toBe('chase');

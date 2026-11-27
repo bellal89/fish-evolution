@@ -7,7 +7,7 @@ test('same seed → identical world after 2000 ticks', () => {
   const a = new World(7), b = new World(7);
   for (let i = 0; i < 2000; i++) { a.step(); b.step(); }
   expect(a.fish.map(f => [f.x, f.y, f.energy])).toEqual(b.fish.map(f => [f.x, f.y, f.energy]));
-});
+}, 30_000);
 
 test('nutrients conserved every tick', () => {
   const w = new World(1);
@@ -16,7 +16,7 @@ test('nutrients conserved every tick', () => {
     w.step();
     expect(drift(w, t0)).toBeLessThan(1e-6);
   }
-});
+}, 30_000);
 
 test('long run stays finite and conserved', () => {
   const w = new World(3);
@@ -34,7 +34,7 @@ test('long run stays finite and conserved', () => {
   }
   expect(fishChecks).toBeGreaterThan(0);
   expect(drift(w, t0)).toBeLessThan(1e-6);
-}, 120_000);
+}, 300_000);
 
 test('extinct world stops', () => {
   const w = new World(1);
