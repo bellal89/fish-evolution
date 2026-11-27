@@ -41,26 +41,23 @@ export interface SceneView {
   food: FoodView;
 }
 
-export interface SelectedView {
-  fish: {
-    id: number;
-    sex: Sex;
-    age: number;
-    energy: number;
-    children: number;
-    traits: Traits;
-    genome: Genome;
-    inputs: number[];
-    outputs: number[];
-    /** [node id, value] from the last brain activation. */
-    activations: [number, number][];
-  };
+export interface SelectedFish {
+  id: number;
+  sex: Sex;
+  age: number;
+  energy: number;
+  children: number;
+  traits: Traits;
+  genome: Genome;
+  inputs: number[];
+  /** Node id to value from the last brain activation. */
+  activations: Map<number, number>;
 }
 
 export interface Snapshot extends SceneView {
   tick: number;
   extinct: boolean;
-  selected: SelectedView | null;
+  selected: SelectedFish | null;
   leader: { genome: Genome; living: number } | null;
   /** Only when changed. */
   stats?: StatPoint[];
@@ -69,6 +66,6 @@ export interface Snapshot extends SceneView {
 export type ToWorker =
   | { type: 'speed'; speed: 0 | 1 | 10 | 50 | 'max' }
   | { type: 'select'; id: number | null }
-  | { type: 'reset'; seed?: number };
+  | { type: 'reset'; seed: number };
 
 export type FromWorker = { type: 'snapshot'; snap: Snapshot };

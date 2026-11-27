@@ -1,7 +1,7 @@
 import { CONFIG } from './config';
 import type { Egg } from './reproduction';
 import type { Fish } from './fish';
-import { clamp, wrapAngle } from './geom';
+import { clamp, keepInTank, wrapAngle } from './geom';
 import type { Rng } from './rng';
 import type { SpatialGrid } from './spatial';
 import { expressedColor, visibility } from './traits';
@@ -32,8 +32,6 @@ export interface PredatorView {
   fish: SpatialGrid<Fish>;
   eggs: Egg[];
   bg(x: number, y: number): { hue: number; brightness: number };
-  tankW: number;
-  tankH: number;
 }
 
 /** Seam where a learned predator brain can replace the script. */
@@ -59,7 +57,6 @@ function steerTo(p: Predator, x: number, y: number): number {
 export class ScriptedPredator implements PredatorController {
   decide(p: Predator, view: PredatorView, rng: Rng): PredatorAction {
     if (p.state === 'rest') {
-      p.targetId = null;
       return { turn: 0, thrust: 0 };
     }
 
@@ -88,9 +85,7 @@ export class ScriptedPredator implements PredatorController {
   }
 
   private findTarget(p: Predator, view: PredatorView): Fish | null {
-    if (p.targetId === null) return null;
-    const range = CONFIG.PRED_VIEW_RANGE;
-    for (const f of view.fish.query(p.x, p.y, range)) {
+    for (const f of view.fish.query(p.x, p.y, CONFIG.PRED_VIEW_RANGE)) {
       if (f.id === p.targetId) return f;
     }
     return null;
@@ -118,25 +113,14 @@ export class ScriptedPredator implements PredatorController {
 
 /** Applies the action: turn, move, bounce off walls, update stamina and state. */
 export function stepPredator(p: Predator, a: PredatorAction, tankW: number, tankH: number): void {
-  p.heading = wrapAngle(p.heading + clamp(a.turn, -1, 1) * CONFIG.PRED_TURN_RATE);
-  const thrust = clamp(a.thrust, 0, 1);
+  p.heading = wrapAngle(p.heading + a.turn * CONFIG.PRED_TURN_RATE);
   p.speed =
-    p.state === 'chase' ? CONFIG.PRED_DASH_SPEED * thrust
-    : p.state === 'patrol' ? CONFIG.PRED_PATROL_SPEED * thrust
+    p.state === 'chase' ? CONFIG.PRED_DASH_SPEED * a.thrust
+    : p.state === 'patrol' ? CONFIG.PRED_PATROL_SPEED * a.thrust
     : 0;
-  const dx = Math.cos(p.heading), dy = Math.sin(p.heading);
-  p.x += dx * p.speed;
-  p.y += dy * p.speed;
-
-  const minX = p.size, maxX = tankW - p.size;
-  const minY = p.size, maxY = tankH - CONFIG.SAND_H - p.size;
-  let hitX = false, hitY = false;
-  if (p.x < minX) { p.x = minX; hitX = dx < 0; }
-  else if (p.x > maxX) { p.x = maxX; hitX = dx > 0; }
-  if (p.y < minY) { p.y = minY; hitY = dy < 0; }
-  else if (p.y > maxY) { p.y = maxY; hitY = dy > 0; }
-  if (hitX) p.heading = wrapAngle(Math.PI - p.heading);
-  if (hitY) p.heading = wrapAngle(-p.heading);
+  p.x += Math.cos(p.heading) * p.speed;
+  p.y += Math.sin(p.heading) * p.speed;
+  keepInTank(p, p.size, tankW, tankH - CONFIG.SAND_H);
 
   if (p.state === 'chase') {
     p.stamina = Math.max(0, p.stamina - CONFIG.PRED_STAMINA_DRAIN);

@@ -5,15 +5,15 @@ import { expressedColor } from './traits';
 import type { World } from './world';
 
 export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, includeStats: boolean): Snapshot {
-  const sel = selectedId === null ? undefined : w.fish.find(f => f.id === selectedId);
+  const sel = w.fish.find(f => f.id === selectedId);
   const lead = w.lineage.leader();
   return {
     tankW: CONFIG.TANK_W,
     tankH: CONFIG.TANK_H,
-    rocks: w.food.rocks.map(r => ({ x: r.x, y: r.y, rx: r.rx, ry: r.ry })),
+    rocks: w.food.rocks,
     fish: w.fish.map(f => ({
       id: f.id, x: f.x, y: f.y, heading: f.heading, size: f.traits.size, sex: f.sex,
-      color: { ...expressedColor(f.traits, f.sex) },
+      color: expressedColor(f.traits, f.sex),
     })),
     predators: w.predators.map(p => ({ x: p.x, y: p.y, heading: p.heading, size: p.size, state: p.state })),
     food: {
@@ -26,17 +26,14 @@ export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, 
     extinct: w.extinct,
     selected: sel
       ? {
-          fish: {
-            id: sel.id, sex: sel.sex, age: sel.age, energy: sel.energy, children: sel.children,
-            traits: structuredClone(sel.traits),
-            genome: structuredClone(sel.genome),
-            inputs: Array.from(sel.lastInputs),
-            outputs: Array.from(sel.lastOutputs),
-            activations: [...sel.brain.activations],
-          },
+          id: sel.id, sex: sel.sex, age: sel.age, energy: sel.energy, children: sel.children,
+          traits: sel.traits,
+          genome: sel.genome,
+          inputs: Array.from(sel.lastInputs),
+          activations: sel.brain.activations,
         }
       : null,
-    leader: lead ? { genome: structuredClone(lead.genome), living: lead.living } : null,
-    ...(includeStats ? { stats: stats.history.map(p => ({ ...p })) } : {}),
+    leader: lead ? { genome: lead.genome, living: lead.living } : null,
+    ...(includeStats ? { stats: stats.history } : {}),
   };
 }

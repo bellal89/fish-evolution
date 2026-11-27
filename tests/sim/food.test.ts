@@ -7,7 +7,7 @@ import { Rng } from '../../src/sim/rng';
 const W = CONFIG.TANK_W, H = CONFIG.TANK_H;
 
 function makeField(level: number): FertilizerField {
-  const f = new FertilizerField(64, 36, W, H);
+  const f = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, W, H);
   f.cells.fill(level);
   return f;
 }
@@ -70,11 +70,11 @@ test('eatAlgae and removePlankton return what was actually taken', () => {
   const rng = new Rng(4);
   const food = new FoodSystem(rng, W, H);
   for (let i = 0; i < 300; i++) food.step(f, rng);
-  const cell = food.algae[0]!;
+  const cell = food.algae[0];
   const have = cell.biomass;
   expect(food.eatAlgae(cell, have + 100)).toBe(have);
   expect(cell.biomass).toBe(0);
-  const p = food.plankton[0]!;
+  const p = food.plankton[0];
   expect(food.removePlankton(p)).toBe(p.amount);
   expect(food.plankton).not.toContain(p);
 });
@@ -85,7 +85,7 @@ test('waste sinks, then dissolves into the field once on the bottom', () => {
   const food = new FoodSystem(rng, W, H);
   food.algae.length = 0;
   food.addWaste(800, 100, 10);
-  const w = food.waste[0]!;
+  const w = food.waste[0];
   food.step(f, rng);
   expect(w.y).toBeGreaterThan(100);
   expect(f.total()).toBeGreaterThan(0);

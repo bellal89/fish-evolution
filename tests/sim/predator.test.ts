@@ -28,7 +28,7 @@ function conspicuousFish(id: number, x: number, y: number): Fish {
 function view(fish: Fish[], eggs: Egg[] = []): PredatorView {
   const grid = new SpatialGrid<Fish>(100, W, H);
   for (const f of fish) grid.insert(f);
-  return { fish: grid, eggs, bg, tankW: W, tankH: H };
+  return { fish: grid, eggs, bg };
 }
 
 test('predator is assignable to SensingPredator', () => {

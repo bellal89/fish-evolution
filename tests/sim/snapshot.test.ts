@@ -14,7 +14,7 @@ test('snapshot is structured-cloneable', () => {
   s.sample(w);
   const snap = makeSnapshot(w, s, w.fish[0].id, true);
   expect(() => structuredClone(snap)).not.toThrow();
-  expect(snap.selected!.fish.activations.length).toBeGreaterThan(0);
+  expect(snap.selected!.activations.size).toBeGreaterThan(0);
   expect(snap.stats).toHaveLength(1);
   expect(snap.fish).toHaveLength(w.fish.length);
 });

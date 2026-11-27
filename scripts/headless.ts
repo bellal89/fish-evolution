@@ -30,7 +30,7 @@ while (w.tick < ticks && !w.extinct) {
     maxPop = Math.max(maxPop, p.population);
   }
   if (w.tick % LINE_EVERY === 0) {
-    const p = window[window.length - 1]!;
+    const p = window.at(-1)!;
     console.log(
       `tick ${w.tick} pop ${p.population} M ${p.males} F ${p.females} eggs ${p.eggs}` +
       ` escape ${f2(mean(window, 'escapeRate'))} food ${f2(mean(window, 'foodPerFish'))}` +

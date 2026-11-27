@@ -101,7 +101,7 @@ export function mountInspector(root: HTMLElement): Inspector {
       drawSizeSpark();
     },
     update(snap) {
-      const sel = snap.selected?.fish;
+      const sel = snap.selected;
       if (sel && sel.id === wanted) gotFish = true;
       if (!sel && gotFish) { died = true; gotFish = false; }
       const show = !!sel && sel.id === wanted;
@@ -128,7 +128,7 @@ export function mountInspector(root: HTMLElement): Inspector {
           `mate at ${t.mateThreshold.toFixed(0)} · invest ${Math.round(t.investFraction * 100)}% · ` +
           `lifespan ${Math.round(t.lifespanTicks / CONFIG.TICKS_PER_SEC)}s · ` +
           `prefers hue ${Math.round(t.prefHue * 360)}° ${t.prefPattern} · choosiness ${t.choosiness.toFixed(2)}`;
-        drawBrain(fishBrain.getContext('2d')!, sel.genome, new Map(sel.activations), INPUT_LABELS);
+        drawBrain(fishBrain.getContext('2d')!, sel.genome, sel.activations, INPUT_LABELS);
       }
 
       if (tab === 'leader') {

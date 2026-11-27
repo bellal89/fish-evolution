@@ -2,8 +2,7 @@ import { crossover } from '../neat/crossover';
 import type { Genome, InnovationTracker } from '../neat/genome';
 import { mutateGenome } from '../neat/mutate';
 import { CONFIG } from './config';
-import type { Fish } from './fish';
-import { isMature } from './fish';
+import { isMature, type Fish } from './fish';
 import { clamp } from './geom';
 import type { Rng } from './rng';
 import { accepts, crossTraits, expressedColor, mutateTraits, type Sex, type Traits } from './traits';
@@ -26,7 +25,7 @@ function wants(chooser: Fish, other: Fish): boolean {
     isMature(chooser) &&
     chooser.mateCooldown === 0 &&
     chooser.energy >= chooser.traits.mateThreshold &&
-    chooser.lastOutputs[2]! > 0 &&
+    chooser.lastOutputs[2] > 0 &&
     accepts(chooser.traits, expressedColor(other.traits, other.sex))
   );
 }

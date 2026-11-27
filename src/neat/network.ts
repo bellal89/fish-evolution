@@ -6,7 +6,6 @@ import type { Genome } from './genome';
  */
 export class Network {
   private readonly nIn: number;
-  private readonly nOut: number;
   /** Node id per value slot: inputs, bias, then hidden and output nodes in evaluation order. */
   private readonly ids: number[];
   /** Node values from the last activate() call, by slot. */
@@ -20,7 +19,6 @@ export class Network {
 
   constructor(g: Genome) {
     this.nIn = g.nodes.filter(n => n.kind === 'input').length;
-    this.nOut = g.nodes.filter(n => n.kind === 'output').length;
 
     const incoming = new Map<number, { from: number; weight: number }[]>();
     const outgoing = new Map<number, number[]>();
@@ -65,29 +63,29 @@ export class Network {
     this.connFrom = Int32Array.from(from);
     this.connWeight = Float64Array.from(weight);
     this.values = new Float64Array(this.ids.length);
-    this.outSlot = Int32Array.from({ length: this.nOut }, (_, o) => slot.get(this.nIn + 1 + o)!);
+    this.outSlot = Int32Array.from(g.nodes.filter(n => n.kind === 'output'), (_, o) => slot.get(this.nIn + 1 + o)!);
   }
 
   /** Node values from the last activate() call, by node id. */
   get activations(): Map<number, number> {
-    return new Map(this.ids.map((id, s) => [id, this.values[s]!]));
+    return new Map(this.ids.map((id, s) => [id, this.values[s]]));
   }
 
   activate(inputs: Float32Array): Float32Array {
     const v = this.values;
     const nIn = this.nIn;
-    for (let i = 0; i < nIn; i++) v[i] = inputs[i]!;
+    for (let i = 0; i < nIn; i++) v[i] = inputs[i];
     v[nIn] = 1;
 
     const start = this.connStart, from = this.connFrom, weight = this.connWeight;
     for (let k = 0; k + 1 < start.length; k++) {
       let sum = 0;
-      for (let j = start[k]!; j < start[k + 1]!; j++) sum += weight[j]! * v[from[j]!]!;
+      for (let j = start[k]; j < start[k + 1]; j++) sum += weight[j] * v[from[j]];
       v[nIn + 1 + k] = Math.tanh(sum);
     }
 
-    const out = new Float32Array(this.nOut);
-    for (let o = 0; o < this.nOut; o++) out[o] = v[this.outSlot[o]!]!;
+    const out = new Float32Array(this.outSlot.length);
+    for (let o = 0; o < out.length; o++) out[o] = v[this.outSlot[o]];
     return out;
   }
 }

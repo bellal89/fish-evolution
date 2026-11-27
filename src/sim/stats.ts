@@ -1,7 +1,7 @@
 import { genomeSize } from '../neat/genome';
 import { CONFIG } from './config';
 import { PATTERNS, expressedColor, type Pattern } from './traits';
-import type { World } from './world';
+import { newEvents, type World } from './world';
 
 export interface StatPoint {
   tick: number;
@@ -83,10 +83,7 @@ export class Stats {
       foodPerFish: n > 0 ? e.foodEaten / n : 0,
       matingsPerFish: n > 0 ? e.matings / n : 0,
     });
-    w.events = {
-      births: 0, deaths: { starved: 0, old: 0, eaten: 0 }, lifespansOfDead: [],
-      matings: 0, escapes: 0, attacks: 0, foodEaten: 0,
-    };
+    w.events = newEvents();
 
     if (this.history.length >= CONFIG.STATS_MAX) this.merge();
   }
@@ -95,7 +92,6 @@ export class Stats {
     const out: StatPoint[] = [];
     for (let i = 0; i < this.history.length; i += 2) {
       const a = this.history[i], b = this.history[i + 1];
-      if (!b) { out.push(a); break; }
       const m = { ...a };
       for (const k of Object.keys(a) as (keyof StatPoint)[]) {
         if (k === 'tick' || k === 'topPatternM' || k === 'topPatternF') continue;

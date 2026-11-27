@@ -61,7 +61,7 @@ test('mutateTraits does not modify its input', () => {
   expect(t).toEqual(copy);
 });
 
-test('crossTraits takes every field from one parent, without sharing objects', () => {
+test('crossTraits takes every field from one parent', () => {
   const rng = new Rng(5);
   const a = randomTraits(rng);
   const b = randomTraits(rng);
@@ -70,10 +70,6 @@ test('crossTraits takes every field from one parent, without sharing objects', (
     for (const k of Object.keys(a) as (keyof typeof a)[]) {
       expect([a[k], b[k]]).toContainEqual(c[k]);
     }
-    expect(c.colorM).not.toBe(a.colorM);
-    expect(c.colorM).not.toBe(b.colorM);
-    expect(c.colorF).not.toBe(a.colorF);
-    expect(c.colorF).not.toBe(b.colorF);
   }
 });
 

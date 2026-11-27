@@ -6,9 +6,11 @@ export const CONFIG = {
 
   /** Sand layer height. */
   SAND_H: 70,
-  /** Background hues. The renderer uses them now, camouflage uses them later. */
+  /** Background colors, used by the renderer and by camouflage. */
   BG_WATER_HUE: 0.55,
   BG_SAND_HUE: 0.11,
+  BG_WATER_BRIGHTNESS: 0.5,
+  BG_SAND_BRIGHTNESS: 0.7,
 
   // NEAT
   /** Chance to perturb the weights of a mutated genome. */
@@ -130,6 +132,7 @@ export const CONFIG = {
   MATURITY_TICKS: 600,
 
   // Predator, reproduction, lineage
+  /** Body radius. */
   PRED_SIZE: 20,
   /** Cruise speed while patrolling, per tick. */
   PRED_PATROL_SPEED: 1.2,
@@ -172,8 +175,6 @@ export const CONFIG = {
   EAT_REACH: 4,
   /** Ticks a predator stays sated after eating a fish. */
   PRED_SATIETY_TICKS: 600,
-  BG_WATER_BRIGHTNESS: 0.5,
-  BG_SAND_BRIGHTNESS: 0.7,
   /** Cell size of the per-tick spatial grids. */
   GRID_CELL: 200,
 
@@ -182,6 +183,8 @@ export const CONFIG = {
   STATS_EVERY: 300,
   /** History length at which adjacent points are merged. */
   STATS_MAX: 600,
+
+  // UI
   /** Radius in px for picking a fish with a click. */
   PICK_RADIUS: 20,
 

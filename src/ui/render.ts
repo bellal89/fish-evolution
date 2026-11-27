@@ -1,6 +1,6 @@
 import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
-import type { FishView, PredatorSnap, Rock, SceneView, SelectedView } from '../protocol';
+import type { FishView, PredatorSnap, Rock, SceneView, SelectedFish } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
 
@@ -18,7 +18,7 @@ function fishPatternColor(c: ColorGenes): string {
   return `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
 }
 
-export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time, selected: SelectedView | null = null): void {
+export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time, selected: SelectedFish | null = null): void {
   const { tankW: W, tankH: H } = scene;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -326,16 +326,16 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
 }
 
 /** Vision rays (same angle formula as the senses) and a ring around the selected fish. */
-function drawSelection(ctx: CanvasRenderingContext2D, scene: SceneView, sel: SelectedView): void {
-  const f = scene.fish.find(x => x.id === sel.fish.id);
+function drawSelection(ctx: CanvasRenderingContext2D, scene: SceneView, sel: SelectedFish): void {
+  const f = scene.fish.find(x => x.id === sel.id);
   if (!f) return;
-  const { viewAngle, viewRange } = sel.fish.traits;
+  const { viewAngle, viewRange } = sel.traits;
   const n = CONFIG.RAY_COUNT;
   ctx.save();
   ctx.lineWidth = 1.5;
   for (let i = 0; i < n; i++) {
     const a = f.heading + viewAngle * (i / (n - 1) - 0.5);
-    const hit = Math.max(sel.fish.inputs[3 * i] ?? 0, sel.fish.inputs[3 * i + 1] ?? 0, sel.fish.inputs[3 * i + 2] ?? 0);
+    const hit = Math.max(sel.inputs[3 * i] ?? 0, sel.inputs[3 * i + 1] ?? 0, sel.inputs[3 * i + 2] ?? 0);
     ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.7 * Math.min(1, hit)})`;
     ctx.beginPath();
     ctx.moveTo(f.x, f.y);

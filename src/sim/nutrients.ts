@@ -23,19 +23,19 @@ export class FertilizerField {
   }
 
   add(x: number, y: number, amt: number): void {
-    this.cells[this.index(x, y)]! += amt;
+    this.cells[this.index(x, y)] += amt;
   }
 
   /** Removes up to `amt` from the cell and returns the amount actually taken. */
   take(x: number, y: number, amt: number): number {
     const i = this.index(x, y);
-    const taken = Math.min(amt, this.cells[i]!);
-    this.cells[i]! -= taken;
+    const taken = Math.min(amt, this.cells[i]);
+    this.cells[i] -= taken;
     return taken;
   }
 
   at(x: number, y: number): number {
-    return this.cells[this.index(x, y)]!;
+    return this.cells[this.index(x, y)];
   }
 
   /** Exchanges `rate` of each neighbour difference between adjacent cells. Needs rate <= 0.25. */
@@ -46,14 +46,14 @@ export class FertilizerField {
       for (let c = 0; c < cols; c++) {
         const i = r * cols + c;
         if (c + 1 < cols) {
-          const flow = (cells[i]! - cells[i + 1]!) * rate;
-          next[i]! -= flow;
-          next[i + 1]! += flow;
+          const flow = (cells[i] - cells[i + 1]) * rate;
+          next[i] -= flow;
+          next[i + 1] += flow;
         }
         if (r + 1 < rows) {
-          const flow = (cells[i]! - cells[i + cols]!) * rate;
-          next[i]! -= flow;
-          next[i + cols]! += flow;
+          const flow = (cells[i] - cells[i + cols]) * rate;
+          next[i] -= flow;
+          next[i + cols] += flow;
         }
       }
     }
@@ -62,7 +62,7 @@ export class FertilizerField {
 
   total(): number {
     let s = 0;
-    for (let i = 0; i < this.cells.length; i++) s += this.cells[i]!;
+    for (let i = 0; i < this.cells.length; i++) s += this.cells[i];
     return s;
   }
 }

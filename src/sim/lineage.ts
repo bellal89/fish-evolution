@@ -20,8 +20,7 @@ export class Lineage {
   }
 
   died(id: number): void {
-    const rec = this.records.get(id);
-    if (!rec || !rec.alive) return;
+    const rec = this.records.get(id)!;
     rec.alive = false;
     const ancestors = this.ancestors(id);
     for (const a of ancestors) a.living -= 1;

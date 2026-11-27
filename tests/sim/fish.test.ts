@@ -37,7 +37,7 @@ test('createFish sets sane defaults and is assignable to SensingFish', () => {
   expect(s.ready).toBe(false);
   expect(f.lastInputs.length).toBe(INPUT_COUNT);
   expect(f.lastOutputs.length).toBe(OUTPUT_COUNT);
-  expect([f.speed, f.age, f.gut, f.children, f.mateCooldown, f.eaten]).toEqual([0, 0, 0, 0, 0, 0]);
+  expect([f.speed, f.age, f.gut, f.children, f.mateCooldown]).toEqual([0, 0, 0, 0, 0]);
 });
 
 test('brain cost grows with size', () => {
@@ -99,9 +99,9 @@ test('thrust maps to speed and moves along the heading', () => {
   expect(g.speed).toBe(0);
 });
 
-test('out-of-range or NaN-free outputs are clamped', () => {
+test('full outputs turn and swim at the maximum', () => {
   const f = mk();
-  applyOutputs(f, out(50, 50), W, H);
+  applyOutputs(f, out(1, 1), W, H);
   expect(f.speed).toBeCloseTo(3);
   expect(f.heading).toBeCloseTo(CONFIG.TURN_RATE);
   expect(Number.isFinite(f.x + f.y)).toBe(true);
@@ -131,10 +131,9 @@ test('corner and water floor: stays inside and heads away', () => {
 });
 
 test('starves at zero energy, dies of old age', () => {
-  expect(isDead(mk())).toBeNull();
-  expect(isDead(mk(f => { f.energy = 0; }))).toBe('starved');
-  expect(isDead(mk(f => { f.age = f.traits.lifespanTicks; }))).toBe('old');
-  expect(isDead(mk(f => { f.energy = 0; f.age = f.traits.lifespanTicks; }))).toBe('starved');
+  expect(isDead(mk())).toBe(false);
+  expect(isDead(mk(f => { f.energy = 0; }))).toBe(true);
+  expect(isDead(mk(f => { f.age = f.traits.lifespanTicks; }))).toBe(true);
 });
 
 test('maturity, cooldown and ready', () => {

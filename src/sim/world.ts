@@ -11,16 +11,18 @@ import { canMate, mate, type Egg } from './reproduction';
 import { Rng } from './rng';
 import { INPUT_COUNT, OUTPUT_COUNT, sense, type SenseContext } from './senses';
 import { SpatialGrid } from './spatial';
-import { randomTraits } from './traits';
+import { MAX_FISH_SIZE, randomTraits } from './traits';
 
 export interface WorldEvents {
-  births: number;
-  deaths: { starved: number; old: number; eaten: number };
   lifespansOfDead: number[];
   matings: number;
   escapes: number;
   attacks: number;
   foodEaten: number;
+}
+
+export function newEvents(): WorldEvents {
+  return { lifespansOfDead: [], matings: 0, escapes: 0, attacks: 0, foodEaten: 0 };
 }
 
 /** Anything a fish can sense as food and eat, with a link back to its source. */
@@ -32,10 +34,10 @@ type FoodItem = { x: number; y: number; amount: number } & (
 
 interface Alarm { x: number; y: number; tick: number }
 
-const MAX_FISH_SIZE = CONFIG.TRAIT_RANGES.size[1];
 // Shared so that bg(), called for every seen fish, does not allocate.
 const WATER_BG = { hue: CONFIG.BG_WATER_HUE, brightness: CONFIG.BG_WATER_BRIGHTNESS } as const;
 const SAND_BG = { hue: CONFIG.BG_SAND_HUE, brightness: CONFIG.BG_SAND_BRIGHTNESS } as const;
+const bg = (_x: number, y: number) => (y < CONFIG.TANK_H - CONFIG.SAND_H ? WATER_BG : SAND_BG);
 
 export class World {
   tick = 0;
@@ -45,10 +47,7 @@ export class World {
   readonly food: FoodSystem;
   readonly field: FertilizerField;
   readonly lineage = new Lineage();
-  events: WorldEvents = {
-    births: 0, deaths: { starved: 0, old: 0, eaten: 0 }, lifespansOfDead: [],
-    matings: 0, escapes: 0, attacks: 0, foodEaten: 0,
-  };
+  events = newEvents();
   extinct = false;
 
   private readonly rng: Rng;
@@ -90,16 +89,11 @@ export class World {
     const perCell = (CONFIG.TOTAL_NUTRIENTS - fishEnergy - this.food.total()) / this.field.cells.length;
     this.field.cells.fill(perCell);
 
-    const bg = (x: number, y: number) => this.bg(x, y);
     this.senseCtx = {
       food: this.foodGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
       tick: 0, bg, tankW: w, tankH: h,
     };
-    this.predView = { fish: this.fishGrid, eggs: this.eggs, bg, tankW: w, tankH: h };
-  }
-
-  bg(_x: number, y: number): { readonly hue: number; readonly brightness: number } {
-    return y < CONFIG.TANK_H - CONFIG.SAND_H ? WATER_BG : SAND_BG;
+    this.predView = { fish: this.fishGrid, eggs: this.eggs, bg };
   }
 
   totalNutrients(): number {
@@ -165,7 +159,6 @@ export class World {
       else if (!it.src.parents.includes(f.id)) got += this.removeEgg(it.src);
     }
     f.energy += got;
-    f.eaten += got;
     this.events.foodEaten += got;
   }
 
@@ -213,7 +206,7 @@ export class World {
         p.gut += f.energy + f.gut;
         p.satiety = CONFIG.PRED_SATIETY_TICKS;
         this.alarms.push({ x: f.x, y: f.y, tick: this.tick });
-        this.recordDeath(f, 'eaten');
+        this.recordDeath(f);
         if (isTarget) {
           p.state = 'patrol';
           p.targetId = null;
@@ -223,10 +216,8 @@ export class World {
       for (const e of [...this.eggs]) {
         if (Math.hypot(e.x - p.x, e.y - p.y) < p.size) p.gut += this.removeEgg(e);
       }
-      if (p.gut >= CONFIG.EXCRETE_AMOUNT) {
-        this.food.addWaste(p.x, p.y, p.gut);
-        p.gut = 0;
-      }
+      const waste = excrete(p);
+      if (waste > 0) this.food.addWaste(p.x, p.y, waste);
     }
     if (eaten.size > 0) this.fish = this.fish.filter(f => !eaten.has(f));
   }
@@ -236,7 +227,6 @@ export class World {
     for (const e of this.eggs) {
       if (this.tick < e.hatchAt) { waiting.push(e); continue; }
       this.fish.push(createFish(e.id, e.x, e.y, e.sex, e.traits, e.genome, e.energy, e.parents));
-      this.events.births++;
     }
     this.eggs = waiting;
   }
@@ -244,16 +234,14 @@ export class World {
   private removeDead(): void {
     const alive: Fish[] = [];
     for (const f of this.fish) {
-      const cause = isDead(f);
-      if (!cause) { alive.push(f); continue; }
+      if (!isDead(f)) { alive.push(f); continue; }
       this.food.addWaste(f.x, f.y, f.energy + f.gut);
-      this.recordDeath(f, cause);
+      this.recordDeath(f);
     }
     this.fish = alive;
   }
 
-  private recordDeath(f: Fish, cause: keyof WorldEvents['deaths']): void {
-    this.events.deaths[cause]++;
+  private recordDeath(f: Fish): void {
     this.events.lifespansOfDead.push(f.age);
     this.lineage.died(f.id);
   }

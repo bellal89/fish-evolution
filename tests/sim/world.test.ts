@@ -49,6 +49,6 @@ test('extinct world stops', () => {
 
 test('births happen in a normal run', () => {
   const w = new World(5);
-  for (let i = 0; i < 30_000 && w.events.births === 0 && !w.extinct; i++) w.step();
-  expect(w.events.births).toBeGreaterThan(0);
+  for (let i = 0; i < 30_000 && !w.fish.some(f => f.parents) && !w.extinct; i++) w.step();
+  expect(w.fish.some(f => f.parents)).toBe(true);
 }, 60_000);

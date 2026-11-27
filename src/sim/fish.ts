@@ -1,7 +1,7 @@
 import { Network } from '../neat/network';
 import { genomeSize, type Genome } from '../neat/genome';
 import { CONFIG } from './config';
-import { clamp, wrapAngle } from './geom';
+import { keepInTank, wrapAngle } from './geom';
 import { INPUT_COUNT, OUTPUT_COUNT } from './senses';
 import type { Sex, Traits } from './traits';
 
@@ -24,8 +24,6 @@ export interface Fish {
   mateCooldown: number;
   lastOutputs: Float32Array;
   lastInputs: Float32Array;
-  /** Total food eaten, for stats. */
-  eaten: number;
   /** Mature, enough energy and off cooldown. */
   ready: boolean;
 }
@@ -46,7 +44,7 @@ export function createFish(
     id, x, y, heading: 0, speed: 0, energy, gut: 0, age: 0, sex, traits, genome,
     brain: new Network(genome), parents, children: 0, mateCooldown: 0,
     lastOutputs: new Float32Array(OUTPUT_COUNT), lastInputs: new Float32Array(INPUT_COUNT),
-    eaten: 0, ready: false,
+    ready: false,
   };
   updateReady(f);
   return f;
@@ -66,24 +64,13 @@ export function tickCost(f: Fish): number {
 
 /** Turns, sets speed and moves; keeps the fish in the water and bounces its heading off walls. */
 export function applyOutputs(f: Fish, out: Float32Array, tankW: number, tankH: number): void {
-  const turn = clamp(out[0], -1, 1);
-  const thrust = clamp(out[1], -1, 1);
+  const [turn, thrust] = out;
   const { size, maxSpeed } = f.traits;
   f.heading = wrapAngle(f.heading + turn * CONFIG.TURN_RATE);
   f.speed = ((thrust + 1) / 2) * maxSpeed;
   f.x += Math.cos(f.heading) * f.speed;
   f.y += Math.sin(f.heading) * f.speed;
-
-  const minX = size, maxX = tankW - size;
-  const minY = size, maxY = tankH - CONFIG.SAND_H - size;
-  const dx = Math.cos(f.heading), dy = Math.sin(f.heading);
-  let hitX = false, hitY = false;
-  if (f.x < minX) { f.x = minX; hitX = dx < 0; }
-  else if (f.x > maxX) { f.x = maxX; hitX = dx > 0; }
-  if (f.y < minY) { f.y = minY; hitY = dy < 0; }
-  else if (f.y > maxY) { f.y = maxY; hitY = dy > 0; }
-  if (hitX) f.heading = wrapAngle(Math.PI - f.heading);
-  if (hitY) f.heading = wrapAngle(-f.heading);
+  keepInTank(f, size, tankW, tankH - CONFIG.SAND_H);
 }
 
 /** Moves the tick cost from energy into the gut; the total is unchanged. */
@@ -94,10 +81,10 @@ export function payCost(f: Fish): void {
 }
 
 /** Returns the gut contents (to become waste) once there is enough, else 0. */
-export function excrete(f: Fish): number {
-  if (f.gut < CONFIG.EXCRETE_AMOUNT) return 0;
-  const out = f.gut;
-  f.gut = 0;
+export function excrete(b: { gut: number }): number {
+  if (b.gut < CONFIG.EXCRETE_AMOUNT) return 0;
+  const out = b.gut;
+  b.gut = 0;
   return out;
 }
 
@@ -106,8 +93,6 @@ export function advanceAge(f: Fish): void {
   f.mateCooldown = Math.max(0, f.mateCooldown - 1);
 }
 
-export function isDead(f: Fish): 'starved' | 'old' | null {
-  if (f.energy <= 0) return 'starved';
-  if (f.age >= f.traits.lifespanTicks) return 'old';
-  return null;
+export function isDead(f: Fish): boolean {
+  return f.energy <= 0 || f.age >= f.traits.lifespanTicks;
 }

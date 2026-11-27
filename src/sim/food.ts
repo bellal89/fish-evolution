@@ -4,7 +4,7 @@ import type { FertilizerField } from './nutrients';
 import type { Rng } from './rng';
 
 export interface AlgaeCell { x: number; y: number; biomass: number }
-export interface Plankton { id: number; x: number; y: number; vx: number; vy: number; amount: number }
+export interface Plankton { x: number; y: number; vx: number; vy: number; amount: number }
 export interface Rock {
   x: number;
   /** Ground level the rock sits on. */
@@ -22,7 +22,6 @@ export class FoodSystem {
   plankton: Plankton[] = [];
   waste: Waste[] = [];
   readonly rocks: Rock[] = [];
-  private nextId = 1;
   private readonly floorY: number;
 
   constructor(rng: Rng, private readonly w: number, h: number) {
@@ -38,7 +37,7 @@ export class FoodSystem {
       this.rocks.push(rock);
       const spread = rock.rx * CONFIG.ALGAE_ROCK_SPREAD;
       for (let i = 0; i < CONFIG.ALGAE_PER_ROCK; i++) {
-        this.algae.push({ x: clamp(rock.x + rng.range(-spread, spread), 0, w), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
+        this.algae.push({ x: rock.x + rng.range(-spread, spread), y: rock.y - rock.ry, biomass: CONFIG.ALGAE_INIT });
       }
     }
     for (let i = 0; i < CONFIG.ALGAE_CELLS - onRocks; i++) {
@@ -66,7 +65,7 @@ export class FoodSystem {
       const x = rng.range(0, this.w), y = rng.range(0, this.floorY);
       if (field.at(x, y) <= CONFIG.PLANKTON_FERT_MIN) continue;
       const amount = field.take(x, y, CONFIG.PLANKTON_AMOUNT);
-      this.plankton.push({ id: this.nextId++, x, y, vx: 0, vy: 0, amount });
+      this.plankton.push({ x, y, vx: 0, vy: 0, amount });
     }
   }
 

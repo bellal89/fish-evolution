@@ -17,10 +17,10 @@ export class SimLoop {
   private statsDirty = false;
   private debt = 0;
   private lastFrame: number | null = null;
-  private lastPost: number | null = null;
+  private lastPost = -Infinity;
 
   constructor(
-    private readonly seed: number,
+    seed: number,
     private readonly post: (m: FromWorker) => void,
     private readonly clock: () => number = () => performance.now(),
   ) {
@@ -32,7 +32,7 @@ export class SimLoop {
       case 'speed': this.speed = msg.speed; break;
       case 'select': this.selectedId = msg.id; break;
       case 'reset':
-        this.world = new World(msg.seed ?? this.seed);
+        this.world = new World(msg.seed);
         this.stats = new Stats();
         this.selectedId = null;
         this.statsDirty = true;
@@ -45,7 +45,7 @@ export class SimLoop {
     const elapsed = this.lastFrame === null ? 0 : nowMs - this.lastFrame;
     this.lastFrame = nowMs;
     this.advance(elapsed);
-    if (this.lastPost === null || nowMs - this.lastPost >= CONFIG.SNAPSHOT_INTERVAL_MS) {
+    if (nowMs - this.lastPost >= CONFIG.SNAPSHOT_INTERVAL_MS) {
       this.lastPost = nowMs;
       this.post({ type: 'snapshot', snap: makeSnapshot(this.world, this.stats, this.selectedId, this.statsDirty) });
       this.statsDirty = false;
@@ -53,9 +53,9 @@ export class SimLoop {
   }
 
   private advance(elapsedMs: number): void {
-    if (this.speed === 0 || this.world.extinct) return;
-    const unlimited = this.speed === 'max';
-    if (this.speed !== 'max') this.debt += (this.speed * elapsedMs) / TICK_MS;
+    const speed = this.speed;
+    const unlimited = speed === 'max';
+    if (!unlimited) this.debt += (speed * elapsedMs) / TICK_MS;
     const start = this.clock();
     while ((unlimited || this.debt >= 1) && !this.world.extinct) {
       if (this.clock() - start >= CONFIG.WORKER_BUDGET_MS) break;

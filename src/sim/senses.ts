@@ -1,31 +1,12 @@
 import { CONFIG } from './config';
 import { clamp, wrapAngle } from './geom';
 import type { SpatialGrid } from './spatial';
-import { attraction, expressedColor, visibility, type Sex, type Traits } from './traits';
+import type { Fish } from './fish';
+import type { Predator } from './predator';
+import { MAX_FISH_SIZE, attraction, expressedColor, visibility } from './traits';
 
-export const INPUT_COUNT = 26;
-export const OUTPUT_COUNT = 3;
-
-export interface SensingFish {
-  x: number;
-  y: number;
-  heading: number;
-  speed: number;
-  energy: number;
-  age: number;
-  sex: Sex;
-  traits: Traits;
-  /** Mature, enough energy and off cooldown. */
-  ready: boolean;
-}
-
-export interface SensingPredator {
-  x: number;
-  y: number;
-  speed: number;
-  maxSpeed: number;
-  size: number;
-}
+export type SensingFish = Pick<Fish, 'x' | 'y' | 'heading' | 'speed' | 'energy' | 'age' | 'sex' | 'traits' | 'ready'>;
+export type SensingPredator = Pick<Predator, 'x' | 'y' | 'speed' | 'maxSpeed' | 'size'>;
 
 export interface SenseContext {
   food: SpatialGrid<{ x: number; y: number; amount: number }>;
@@ -66,6 +47,9 @@ export const INPUT_LABELS: string[] = [
   'ready',
 ];
 
+export const INPUT_COUNT = INPUT_LABELS.length;
+export const OUTPUT_COUNT = 3;
+
 // Nearest hit distance per ray and channel; reused to avoid per-call allocation.
 const nearest = new Float64Array(RAYS * 3);
 const rayDx = new Float64Array(RAYS);
@@ -74,7 +58,7 @@ const lateral = new Float64Array(4);
 
 function hit(ray: number, ch: number, dist: number): void {
   const i = ray * 3 + ch;
-  if (dist < nearest[i]!) nearest[i] = dist;
+  if (dist < nearest[i]) nearest[i] = dist;
 }
 
 /** Casts all rays at a circle; records hits within `range`. Returns nearest hit distance or Infinity. */
@@ -88,7 +72,7 @@ function castAt(
   const r2 = r * r;
   let best = Infinity;
   for (let i = 0; i < RAYS; i++) {
-    const proj = lx * rayDx[i]! + ly * rayDy[i]!;
+    const proj = lx * rayDx[i] + ly * rayDy[i];
     const d2 = l2 - proj * proj;
     if (d2 > r2) continue;
     const half = Math.sqrt(r2 - d2);
@@ -127,7 +111,7 @@ function feel(f: SensingFish, mx: number, my: number, speed: number, maxSpeed: n
     abs <= CONFIG.LATERAL_FRONT_HALF_ANGLE ? 0
     : abs >= Math.PI - CONFIG.LATERAL_FRONT_HALF_ANGLE ? 1
     : bearing < 0 ? 2 : 3;
-  lateral[quadrant]! += Math.min(1, speed / maxSpeed) * (1 - d / CONFIG.LATERAL_RADIUS);
+  lateral[quadrant] += Math.min(1, speed / maxSpeed) * (1 - d / CONFIG.LATERAL_RADIUS);
 }
 
 /** Fills `out` (length INPUT_COUNT) with the fish's brain inputs. */
@@ -141,11 +125,8 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
     rayDy[i] = Math.sin(a);
   }
 
-  // One food query serves the rays and both nostrils. Each sum keeps its item
-  // order (grid order), so results equal separate queries. This holds because
-  // food does not move during the fish step; the fish grid goes stale as fish
-  // move, so its queries below stay separate. The +1 absorbs rounding of the
-  // nostril offset.
+  // One food query serves the rays and both nostrils (food does not move during
+  // the fish step). The +1 absorbs rounding of the nostril offset.
   const foodR = viewRange + CONFIG.SENSE_FOOD_RADIUS;
   const sx = Math.sin(f.heading) * CONFIG.SMELL_SIDE_OFFSET;
   const sy = -Math.cos(f.heading) * CONFIG.SMELL_SIDE_OFFSET;
@@ -159,8 +140,7 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
 
   let mateDist = Infinity;
   let mateAppeal = 0;
-  const maxSize = CONFIG.TRAIT_RANGES.size[1];
-  for (const o of ctx.fish.query(f.x, f.y, viewRange + maxSize)) {
+  for (const o of ctx.fish.query(f.x, f.y, viewRange + MAX_FISH_SIZE)) {
     if (o === f) continue;
     const color = expressedColor(o.traits, o.sex);
     const bg = ctx.bg(o.x, o.y);
@@ -176,7 +156,7 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
   }
 
   for (let i = 0; i < RAYS * 3; i++) {
-    const d = nearest[i]!;
+    const d = nearest[i];
     out[i] = d === Infinity ? 0 : 1 - d / viewRange;
   }
   out[IN_MATE] = mateAppeal;
@@ -185,7 +165,7 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
     if (o !== f) feel(f, o.x, o.y, o.speed, o.traits.maxSpeed);
   }
   for (const p of ctx.predators) feel(f, p.x, p.y, p.speed, p.maxSpeed);
-  for (let q = 0; q < 4; q++) out[IN_LATERAL + q] = Math.min(1, lateral[q]!);
+  for (let q = 0; q < 4; q++) out[IN_LATERAL + q] = Math.min(1, lateral[q]);
 
   out[IN_SMELL] = (left - right) / (left + right + CONFIG.SMELL_EPS);
 
@@ -196,14 +176,14 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
     if (dx * dx + dy * dy > r2) continue;
     alarm = Math.max(alarm, 1 - (ctx.tick - a.tick) / CONFIG.ALARM_TICKS);
   }
-  out[IN_ALARM] = clamp(alarm, 0, 1);
+  out[IN_ALARM] = alarm;
 
   const cos = Math.cos(f.heading), sin = Math.sin(f.heading);
   const wallDist = Math.min(
     cos > 0 ? (ctx.tankW - f.x) / cos : cos < 0 ? -f.x / cos : Infinity,
     sin > 0 ? (ctx.tankH - CONFIG.SAND_H - f.y) / sin : sin < 0 ? -f.y / sin : Infinity,
   );
-  out[IN_WALL] = clamp(1 - Math.max(0, wallDist) / viewRange, 0, 1);
+  out[IN_WALL] = clamp(1 - wallDist / viewRange, 0, 1);
 
   out[IN_ENERGY] = clamp(f.energy / f.traits.mateThreshold, 0, 1);
   out[IN_AGE] = clamp(f.age / f.traits.lifespanTicks, 0, 1);

@@ -1,4 +1,5 @@
 import { CONFIG } from './config';
+import { clamp } from './geom';
 import type { Rng } from './rng';
 
 export type Sex = 'M' | 'F';
@@ -12,7 +13,6 @@ export interface ColorGenes {
   /** Saturation + lightness contrast, 0..1 (0 = dull, 1 = vivid). */
   brightness: number;
   pattern: Pattern;
-  /** 1..6 */
   patternCount: number;
   /** Pattern hue, 0..1. */
   hue2: number;
@@ -26,7 +26,7 @@ export interface Traits {
   viewRange: number;
   /** Energy needed to mate. */
   mateThreshold: number;
-  /** Share of energy given to offspring, 0.1..0.6. */
+  /** Share of energy given to offspring. */
   investFraction: number;
   lifespanTicks: number;
   colorM: ColorGenes;
@@ -39,6 +39,7 @@ export interface Traits {
 
 type Range = readonly [number, number];
 const R = CONFIG.TRAIT_RANGES;
+export const MAX_FISH_SIZE = R.size[1];
 
 const SCALAR_KEYS = [
   'size',
@@ -53,7 +54,6 @@ const SCALAR_KEYS = [
 
 const TRAIT_KEYS = [...SCALAR_KEYS, 'colorM', 'colorF', 'prefHue', 'prefPattern'] as const;
 
-const clamp = (x: number, [lo, hi]: Range) => Math.min(hi, Math.max(lo, x));
 const wrap01 = (x: number) => x - Math.floor(x);
 
 function randomColor(rng: Rng): ColorGenes {
@@ -77,18 +77,17 @@ export function randomTraits(rng: Rng): Traits {
   return t;
 }
 
-/** Each field comes from a random parent; color blocks are copied. */
+/** Each field comes from a random parent. */
 export function crossTraits(a: Traits, b: Traits, rng: Rng): Traits {
   const child: Record<string, unknown> = {};
   for (const k of TRAIT_KEYS) {
-    const v = (rng.chance(0.5) ? a : b)[k];
-    child[k] = typeof v === 'object' ? { ...v } : v;
+    child[k] = (rng.chance(0.5) ? a : b)[k];
   }
   return child as unknown as Traits;
 }
 
 function noisy(x: number, range: Range, rng: Rng): number {
-  return clamp(x + rng.normal() * CONFIG.TRAIT_MUT_SD * (range[1] - range[0]), range);
+  return clamp(x + rng.normal() * CONFIG.TRAIT_MUT_SD * (range[1] - range[0]), range[0], range[1]);
 }
 
 function noisyHue(h: number, rng: Rng): number {
