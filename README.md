@@ -34,3 +34,28 @@ npx tsx scripts/headless.ts [seed] [ticks]
 - **Matings per fish**: matings per fish between samples.
 - **Most common male hue**, **Most common female hue**, **Top pattern**: the most common expressed hue (in 15° steps) over time and the most common pattern now, per sex.
 - **Inspector** (click a fish): sex, age, energy, children, how much waste aged it, both color variants, body and mating genes, and its brain with live activations. The leader tab shows the leader's brain.
+
+## Brain arena
+
+Press **Arena** to compare two brains side by side. The arena shows two copies of the tank with the same start: the same food, rocks, fish positions and predator. Each side has 5 fish that share one brain. All arena fish have the same standard body (each body gene at the middle of its range), so only the brain is different. The fish show the colors of the brain's owner. There is no mating in the arena.
+
+Choose the brain of each side in its list:
+
+- **Random**: a new brain, as in the first generation, with random colors.
+- **Leader**: the current leader.
+- **Selected fish**: the fish you selected in the aquarium.
+- **Leader history**: the world stores the leader every 5 sim minutes. Each row shows the leader's colors, the time, its living descendants then and the size of its brain.
+
+Under each side you see the fish alive, the food they ate, the time since the start, and the live brain of one fish. Click a fish to see its brain. **Same start again** runs both sides again from the same start. **New start** makes a new start and new random brains. The arena has its own speed (⏸, x1, x10). The main world pauses while the arena is open and continues after **← Back**.
+
+## Export and Import
+
+**Export** downloads the main world as `fish-evolution-<time>.json.gz`: the world, its charts and the leader history. **Import** replaces the current world with the world from such a file, after a confirmation. A file from another version of the app does not open, and the current world does not change.
+
+Print a summary of an exported world (population, genes, most common hues, top lineages, leader history):
+
+```sh
+npx tsx scripts/inspect.ts <file>
+```
+
+To continue an exported world in your own script, use `loadSave(path)` from `scripts/saveTools.ts`. It returns the save and a `World` that you can step.
