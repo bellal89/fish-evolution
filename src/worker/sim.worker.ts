@@ -1,10 +1,9 @@
 /// <reference lib="webworker" />
 import type { ToWorker } from '../protocol';
 import { CONFIG } from '../sim/config';
+import { SAVE_VERSION } from '../saveFile';
 import { SimLoop, type LoopSave } from './loop';
 
-/** Bump when the saved state changes shape, so that an old save is ignored. */
-const SAVE_VERSION = 2;
 const SAVE_KEY = 'world';
 
 function openDb(): Promise<IDBDatabase> {
