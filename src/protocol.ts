@@ -30,6 +30,8 @@ export interface FoodView {
   plankton: { x: number; y: number }[];
   waste: { x: number; y: number; amount: number }[];
   eggs: { x: number; y: number }[];
+  /** Dead fish; fade is the share of nutrients left, 0..1. */
+  bodies: { x: number; y: number; size: number; heading: number; fade: number }[];
 }
 
 export interface Snapshot {
