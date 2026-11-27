@@ -8,7 +8,9 @@ const loop = new SimLoop(Date.now(), m => postMessage(m));
 self.onmessage = (e: MessageEvent<ToWorker>) => loop.handle(e.data);
 
 function tick(): void {
-  loop.frame(performance.now());
-  setTimeout(tick, CONFIG.WORKER_TIMER_MS);
+  const start = performance.now();
+  loop.frame(start);
+  const spent = performance.now() - start;
+  setTimeout(tick, Math.max(0, CONFIG.WORKER_TIMER_MS - spent));
 }
 tick();
