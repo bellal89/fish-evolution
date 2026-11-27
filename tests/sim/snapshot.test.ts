@@ -53,3 +53,9 @@ test('snapshot lists bodies with their shape and fade', () => {
   const snap = makeSnapshot(w, s, null, false);
   expect(snap.food.bodies).toEqual([{ x: 300, y: 200, size: 12, heading: 0.5, fade: 0.25 }]);
 });
+
+test('selected view carries wasteAge', () => {
+  const { w, s } = setup();
+  w.fish[0].wasteAge = 123;
+  expect(makeSnapshot(w, s, w.fish[0].id, false).selected!.wasteAge).toBe(123);
+});

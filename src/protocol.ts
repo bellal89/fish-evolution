@@ -53,6 +53,8 @@ export interface SelectedFish {
   id: number;
   sex: Sex;
   age: number;
+  /** Extra age from waste and bodies, ticks. */
+  wasteAge: number;
   energy: number;
   children: number;
   traits: Traits;

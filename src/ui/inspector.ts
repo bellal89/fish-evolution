@@ -26,6 +26,7 @@ export function mountInspector(root: HTMLElement): Inspector {
       <div id="fish-msg" class="msg">Click a fish to inspect it</div>
       <div id="fish-body" hidden>
         <div id="fish-info"></div>
+        <div id="fish-waste"></div>
         <div class="bar"><div id="energy-fill"></div></div>
         <div class="swatches"></div>
         <div id="fish-genes"></div>
@@ -40,6 +41,7 @@ export function mountInspector(root: HTMLElement): Inspector {
   const msg = root.querySelector<HTMLElement>('#fish-msg')!;
   const body = root.querySelector<HTMLElement>('#fish-body')!;
   const info = root.querySelector<HTMLElement>('#fish-info')!;
+  const wasteInfo = root.querySelector<HTMLElement>('#fish-waste')!;
   const fill = root.querySelector<HTMLElement>('#energy-fill')!;
   const swatches = root.querySelector<HTMLElement>('.swatches')!;
   const genes = root.querySelector<HTMLElement>('#fish-genes')!;
@@ -94,6 +96,7 @@ export function mountInspector(root: HTMLElement): Inspector {
         info.textContent =
           `${sel.sex === 'M' ? '♂ male' : '♀ female'} · age ${secs(sel.age)} · ` +
           `energy ${sel.energy.toFixed(0)} · children ${sel.children}`;
+        wasteInfo.textContent = `aged by waste: ${secs(sel.wasteAge)}`;
         fill.style.width = `${Math.min(100, (sel.energy / (t.mateThreshold * 1.5)) * 100)}%`;
         const shown = expressedColor(t, sel.sex);
         [t.colorM, t.colorF].forEach((c, i) => {

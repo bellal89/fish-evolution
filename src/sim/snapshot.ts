@@ -27,7 +27,7 @@ export function makeSnapshot(w: World, stats: Stats, selectedId: number | null, 
     extinct: w.extinct,
     selected: sel
       ? {
-          id: sel.id, sex: sel.sex, age: sel.age, energy: sel.energy, children: sel.children,
+          id: sel.id, sex: sel.sex, age: sel.age, wasteAge: sel.wasteAge, energy: sel.energy, children: sel.children,
           traits: sel.traits,
           genome: sel.genome,
           inputs: Array.from(sel.lastInputs),
