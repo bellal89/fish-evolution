@@ -5,7 +5,10 @@ const SPEEDS = [1, 10, 50, 'max'] as const;
 
 function simTime(tick: number): string {
   const s = Math.floor(tick / CONFIG.TICKS_PER_SEC);
-  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  const h = Math.floor(s / 3600);
+  const m = Math.floor(s / 60) % 60;
+  const mmss = `${m}:${String(s % 60).padStart(2, '0')}`;
+  return h > 0 ? `${h}:${mmss.padStart(5, '0')}` : mmss;
 }
 
 export function mountControls(root: HTMLElement, send: (m: ToWorker) => void): { update(snap: Snapshot): void } {
