@@ -1,6 +1,7 @@
 import { Network } from '../neat/network';
 import { genomeSize, type Genome } from '../neat/genome';
 import { CONFIG } from './config';
+import type { Dirt } from './food';
 import { keepInTank, wrapAngle } from './geom';
 import { INPUT_COUNT, OUTPUT_COUNT } from './senses';
 import type { Sex, Traits } from './traits';
@@ -14,7 +15,10 @@ export interface Fish {
   energy: number;
   /** Spent energy waiting to be excreted. */
   gut: number;
+  /** Natural age, ticks. */
   age: number;
+  /** Extra age from waste and bodies, ticks. It counts toward death, not maturity. */
+  wasteAge: number;
   sex: Sex;
   traits: Traits;
   genome: Genome;
@@ -43,7 +47,7 @@ export function createFish(
   energy: number, parents: [number, number] | null,
 ): Fish {
   const f: Fish = {
-    id, x, y, heading: 0, speed: 0, energy, gut: 0, age: 0, sex, traits, genome,
+    id, x, y, heading: 0, speed: 0, energy, gut: 0, age: 0, wasteAge: 0, sex, traits, genome,
     brain: new Network(genome), parents, children: 0, mateCooldown: 0, biteCooldown: 0,
     lastOutputs: new Float32Array(OUTPUT_COUNT), lastInputs: new Float32Array(INPUT_COUNT),
     ready: false,
@@ -97,5 +101,16 @@ export function advanceAge(f: Fish): void {
 }
 
 export function isDead(f: Fish): boolean {
-  return f.energy <= 0 || f.age >= f.traits.lifespanTicks;
+  return f.energy <= 0 || f.age + f.wasteAge >= f.traits.lifespanTicks;
+}
+
+/** Extra age for this tick: N if the fish touches waste, N * K if it touches a body. */
+export function wasteHarm(f: Pick<Fish, 'x' | 'y' | 'traits'>, near: Iterable<Dirt>): number {
+  let harm = 0;
+  for (const d of near) {
+    if (Math.hypot(d.x - f.x, d.y - f.y) >= f.traits.size + d.size + CONFIG.EAT_REACH) continue;
+    if (d.size > 0) return CONFIG.WASTE_AGE_TICKS * CONFIG.BODY_AGE_MULT;
+    harm = CONFIG.WASTE_AGE_TICKS;
+  }
+  return harm;
 }

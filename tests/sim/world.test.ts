@@ -160,3 +160,36 @@ test('fish smell bodies in the world', () => {
   w.step();
   expect(f.lastInputs[INPUT_LABELS.indexOf('waste smell')]).toBeGreaterThan(0);
 });
+
+/** One fish in a clean world: no predators, food, waste or other fish. */
+function lonelyFish() {
+  const w = new World(1);
+  const [f] = w.fish;
+  w.fish = [f];
+  w.predators.length = 0;
+  w.food.algae.length = 0;
+  w.food.plankton.length = 0;
+  w.food.waste.length = 0;
+  return { w, f };
+}
+
+test('a fish at the bottom touches a small body on the sand', () => {
+  const { w, f } = lonelyFish();
+  const floorY = CONFIG.TANK_H - CONFIG.SAND_H;
+  f.traits.size = 6;
+  f.x = 500;
+  f.y = floorY - 6;
+  w.food.addBody(500, floorY + CONFIG.BODY_REST_DEPTH * 6, 10, 6, 0);
+  w.step();
+  expect(f.wasteAge).toBe(CONFIG.WASTE_AGE_TICKS * CONFIG.BODY_AGE_MULT);
+});
+
+test('waste aging can kill, and the fish leaves a body', () => {
+  const { w, f } = lonelyFish();
+  // Without harm, the fish lives through this tick.
+  f.age = f.traits.lifespanTicks - 1 - CONFIG.WASTE_AGE_TICKS / 2;
+  w.food.addWaste(f.x, f.y, 1);
+  w.step();
+  expect(w.fish).toEqual([]);
+  expect(w.food.bodies).toHaveLength(1);
+});

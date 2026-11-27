@@ -1,7 +1,7 @@
 import { InnovationTracker, createMinimalGenome } from '../neat/genome';
 import { CONFIG } from './config';
 import {
-  advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, type Fish,
+  advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
 } from './fish';
 import { FoodSystem, type AlgaeCell, type Dirt, type Plankton } from './food';
 import { Lineage } from './lineage';
@@ -189,6 +189,7 @@ export class World {
       f.lastOutputs = f.brain.activate(f.lastInputs);
       applyOutputs(f, f.lastOutputs, TANK_W, TANK_H);
       this.eat(f);
+      f.wasteAge += wasteHarm(f, this.dirtGrid.query(f.x, f.y, f.traits.size + MAX_FISH_SIZE + CONFIG.EAT_REACH));
       payCost(f);
       const waste = excrete(f);
       if (waste > 0) this.food.addWaste(f.x, f.y, waste);

@@ -5,7 +5,7 @@ import type { Fish } from './fish';
 import type { Predator } from './predator';
 import { MAX_FISH_SIZE, attraction, expressedColor, visibility } from './traits';
 
-export type SensingFish = Pick<Fish, 'x' | 'y' | 'heading' | 'speed' | 'energy' | 'age' | 'sex' | 'traits' | 'ready'>;
+export type SensingFish = Pick<Fish, 'x' | 'y' | 'heading' | 'speed' | 'energy' | 'age' | 'wasteAge' | 'sex' | 'traits' | 'ready'>;
 export type SensingPredator = Pick<Predator, 'x' | 'y' | 'speed' | 'maxSpeed' | 'size'>;
 
 export interface SenseContext {
@@ -202,6 +202,6 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
   out[IN_WALL] = clamp(1 - wallDist / viewRange, 0, 1);
 
   out[IN_ENERGY] = clamp(f.energy / f.traits.mateThreshold, 0, 1);
-  out[IN_AGE] = clamp(f.age / f.traits.lifespanTicks, 0, 1);
+  out[IN_AGE] = clamp((f.age + f.wasteAge) / f.traits.lifespanTicks, 0, 1);
   out[IN_READY] = f.ready ? 1 : 0;
 }

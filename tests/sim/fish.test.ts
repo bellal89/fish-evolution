@@ -3,7 +3,7 @@ import { InnovationTracker, createMinimalGenome, type Genome } from '../../src/n
 import { addNode, mutateGenome } from '../../src/neat/mutate';
 import { CONFIG } from '../../src/sim/config';
 import {
-  advanceAge, applyOutputs, createFish, excrete, isDead, isMature, payCost, tickCost, updateReady,
+  advanceAge, applyOutputs, createFish, excrete, isDead, isMature, payCost, tickCost, updateReady, wasteHarm,
   type Fish,
 } from '../../src/sim/fish';
 import { Rng } from '../../src/sim/rng';
@@ -124,4 +124,29 @@ test('maturity, cooldown and ready', () => {
   f.energy = f.traits.mateThreshold - 1;
   updateReady(f);
   expect(f.ready).toBe(false);
+});
+
+test('harm is a per-tick rate, a body counts K times', () => {
+  const f = mk(g => { g.x = 100; g.y = 100; g.traits.size = 8; });
+  const N = CONFIG.WASTE_AGE_TICKS, K = CONFIG.BODY_AGE_MULT;
+  const reach = f.traits.size + CONFIG.EAT_REACH;
+  const speck = (dx: number) => ({ x: 100 + dx, y: 100, amount: 1, size: 0 });
+  expect(wasteHarm(f, [])).toBe(0);
+  expect(wasteHarm(f, [speck(reach - 0.1)])).toBe(N);
+  expect(wasteHarm(f, [speck(reach + 0.1)])).toBe(0);
+  expect(wasteHarm(f, Array.from({ length: 10 }, (_, i) => speck(i)))).toBe(N);
+  const body = { x: 100, y: 100 + reach + 10 - 0.1, amount: 5, size: 10 };
+  expect(wasteHarm(f, [body])).toBe(N * K);
+  expect(wasteHarm(f, [speck(0), body, speck(1)])).toBe(N * K);
+  expect(wasteHarm(f, [{ ...body, y: body.y + 0.2 }])).toBe(0);
+});
+
+test('waste age kills: isDead when age + wasteAge reaches lifespan, maturity uses age only', () => {
+  const f = mk(g => { g.age = g.traits.lifespanTicks - 10; });
+  f.wasteAge = 9;
+  expect(isDead(f)).toBe(false);
+  f.wasteAge = 10;
+  expect(isDead(f)).toBe(true);
+  const young = mk(g => { g.wasteAge = CONFIG.MATURITY_TICKS; });
+  expect(isMature(young)).toBe(false);
 });

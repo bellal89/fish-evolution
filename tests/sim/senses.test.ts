@@ -23,7 +23,7 @@ function makeFish(x: number, y: number, over: Partial<SensingFish> = {}): Sensin
   traits.viewRange = 200;
   traits.size = 6;
   traits.maxSpeed = 3;
-  return { x, y, heading: 0, speed: 0, energy: 50, age: 0, sex: 'M', traits, ready: false, ...over };
+  return { x, y, heading: 0, speed: 0, energy: 50, age: 0, wasteAge: 0, sex: 'M', traits, ready: false, ...over };
 }
 
 function makeCtx(
@@ -183,6 +183,13 @@ test('energy, age and ready inputs', () => {
   expect(run(me, makeCtx([me]))[IN('ready')]).toBe(0);
 });
 
+test('the age input counts waste age too', () => {
+  const me = makeFish(500, 450);
+  me.age = me.traits.lifespanTicks / 4;
+  me.wasteAge = me.traits.lifespanTicks / 4;
+  expect(run(me, makeCtx([me]))[IN('age')]).toBeCloseTo(0.5, 5);
+});
+
 test('mate appeal comes only from the opposite sex', () => {
   const me = makeFish(500, 450);
   me.traits.prefHue = 0.3;
@@ -204,7 +211,7 @@ test('all inputs finite and within [-1,1]', () => {
     const t = randomTraits(rng);
     fish.push({
       x: rng.range(0, W), y: rng.range(0, H), heading: rng.range(-Math.PI, Math.PI),
-      speed: rng.range(0, t.maxSpeed), energy: rng.range(0, 200), age: rng.range(0, t.lifespanTicks * 1.2),
+      speed: rng.range(0, t.maxSpeed), energy: rng.range(0, 200), age: rng.range(0, t.lifespanTicks * 1.2), wasteAge: 0,
       sex: rng.chance(0.5) ? 'M' : 'F', traits: t, ready: rng.chance(0.5),
     });
   }

@@ -142,6 +142,10 @@ export const CONFIG = {
   EXCRETE_AMOUNT: 2,
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
+  /** Extra age per tick while a fish touches waste (N). */
+  WASTE_AGE_TICKS: 1,
+  /** A dead body ages a fish this many times faster than waste (K). */
+  BODY_AGE_MULT: 3,
 
   // Predator, reproduction, lineage
   /** Body radius. */
