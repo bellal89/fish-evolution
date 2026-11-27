@@ -1,6 +1,8 @@
 import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
-import type { FishView, PredatorSnap, Rock, SceneView } from '../protocol';
+import { rayAngle } from '../sim/senses';
+import { lightCenter } from '../sim/light';
+import type { FishView, PredatorSnap, Rock, SelectedFish, Snapshot } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
 
@@ -18,7 +20,35 @@ function fishPatternColor(c: ColorGenes): string {
   return `hsl(${c.hue2 * 360}, ${25 + 65 * c.brightness}%, ${22 + 40 * c.brightness}%)`;
 }
 
-export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, view: View, t: Time): void {
+/** Pattern marks of fish `id` in the current fill style, for a body of half-length hl and half-height hh. */
+function fillMarks(ctx: CanvasRenderingContext2D, c: ColorGenes, id: number, hl: number, hh: number): void {
+  for (const m of patternMarks(c, id, hl, hh)) {
+    ctx.beginPath();
+    if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
+    else ctx.rect(m.x - m.w, m.y - m.h, m.w * 2, m.h * 2);
+    ctx.fill();
+  }
+}
+
+/** A tiny fish body with the pattern, for swatches and the top-pattern row. */
+export function drawFishIcon(canvas: HTMLCanvasElement, c: ColorGenes): void {
+  const ctx = canvas.getContext('2d')!;
+  const { width: W, height: H } = canvas;
+  ctx.clearRect(0, 0, W, H);
+  const hl = W * 0.42, hh = H * 0.34;
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.beginPath();
+  ctx.ellipse(0, 0, hl, hh, 0, 0, Math.PI * 2);
+  ctx.fillStyle = fishBodyColor(c);
+  ctx.fill();
+  ctx.clip();
+  ctx.fillStyle = fishPatternColor(c);
+  fillMarks(ctx, c, 1, hl, hh);
+  ctx.restore();
+}
+
+export function drawAquarium(ctx: CanvasRenderingContext2D, scene: Snapshot, view: View, t: Time): void {
   const { tankW: W, tankH: H } = scene;
   ctx.save();
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -30,18 +60,19 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: SceneView, vi
   ctx.rect(0, 0, W, H);
   ctx.clip();
 
-  drawWater(ctx, W, H, t);
+  drawWater(ctx, W, H, t, scene.tick);
   drawSand(ctx, W, H);
   for (const r of scene.rocks) drawRock(ctx, r);
   for (const a of scene.food.algae) drawAlgae(ctx, a.x, a.y, a.biomass, t);
   drawParticles(ctx, scene);
   for (const f of scene.fish) drawFish(ctx, f, t);
   for (const p of scene.predators) drawPredator(ctx, p, t);
+  if (scene.selected) drawSelection(ctx, scene, scene.selected);
 
   ctx.restore();
 }
 
-function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time): void {
+function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time, tick: number): void {
   const hue = CONFIG.BG_WATER_HUE * 360;
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, `hsl(${hue - 8}, 55%, 46%)`);
@@ -50,21 +81,24 @@ function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time)
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  // Decorative light shafts — light has no effect on the simulation.
+  // Light shafts gather around the light spot, which feeds the plankton.
+  const cx = lightCenter(tick);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 6; i++) {
-    const x = ((i + 0.5) / 6) * W + Math.sin(t * 0.15 + i * 1.7) * 60;
+    const off = (i / 5 - 0.5) * 2 * CONFIG.LIGHT_SPOT_WIDTH;
+    const x = cx + off + Math.sin(t * 0.15 + i * 1.7) * 30;
     const w = 50 + 30 * Math.sin(i * 2.3);
+    const alpha = 0.16 * Math.exp(-((off / CONFIG.LIGHT_SPOT_WIDTH) ** 2));
     const lg = ctx.createLinearGradient(0, 0, 0, H * 0.9);
-    lg.addColorStop(0, 'rgba(200,240,255,0.10)');
+    lg.addColorStop(0, `rgba(200,240,255,${alpha})`);
     lg.addColorStop(1, 'rgba(200,240,255,0)');
     ctx.fillStyle = lg;
     ctx.beginPath();
     ctx.moveTo(x - w * 0.5, 0);
     ctx.lineTo(x + w * 0.5, 0);
-    ctx.lineTo(x + w * 1.6 + 120, H * 0.9);
-    ctx.lineTo(x + w * 0.2 + 120, H * 0.9);
+    ctx.lineTo(x + w * 0.8, H * 0.9);
+    ctx.lineTo(x - w * 0.8, H * 0.9);
     ctx.closePath();
     ctx.fill();
   }
@@ -89,7 +123,8 @@ function drawSand(ctx: CanvasRenderingContext2D, W: number, H: number): void {
 }
 
 function drawRock(ctx: CanvasRenderingContext2D, r: Rock): void {
-  const g = ctx.createRadialGradient(r.x - r.rx * 0.3, r.y - r.ry * 0.8, r.rx * 0.1, r.x, r.y, r.rx * 1.2);
+  // The outer circle must contain the inner one, or the canvas paints a cone and leaves gaps.
+  const g = ctx.createRadialGradient(r.x - r.rx * 0.3, r.y - r.ry * 0.8, r.rx * 0.1, r.x, r.y, Math.max(r.rx, r.ry) * 1.2);
   g.addColorStop(0, '#9aa3a8');
   g.addColorStop(1, '#3f474c');
   ctx.fillStyle = g;
@@ -114,7 +149,7 @@ function drawAlgae(ctx: CanvasRenderingContext2D, x: number, y: number, biomass:
   }
 }
 
-function drawParticles(ctx: CanvasRenderingContext2D, scene: SceneView): void {
+function drawParticles(ctx: CanvasRenderingContext2D, scene: Snapshot): void {
   ctx.fillStyle = 'rgba(170,255,160,0.75)';
   for (const p of scene.food.plankton) {
     ctx.beginPath();
@@ -124,7 +159,7 @@ function drawParticles(ctx: CanvasRenderingContext2D, scene: SceneView): void {
   ctx.fillStyle = 'rgba(105,78,45,0.85)';
   for (const w of scene.food.waste) {
     ctx.beginPath();
-    ctx.ellipse(w.x, w.y, 1.5 + w.amount * 2, 1.1 + w.amount * 1.2, 0, 0, Math.PI * 2);
+    ctx.ellipse(w.x, w.y, 1.5 + Math.sqrt(w.amount) * 1.1, 1.1 + Math.sqrt(w.amount) * 0.7, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   for (const e of scene.food.eggs) {
@@ -209,12 +244,7 @@ function drawFish(ctx: CanvasRenderingContext2D, f: FishView, t: Time): void {
   bodyPath(ctx, hl, hh);
   ctx.clip();
   ctx.fillStyle = accent;
-  for (const m of patternMarks(c, f.id, hl, hh)) {
-    ctx.beginPath();
-    if (m.kind === 'spot') ctx.arc(m.x, m.y, m.w, 0, Math.PI * 2);
-    else ctx.rect(m.x - m.w, m.y - m.h, m.w * 2, m.h * 2);
-    ctx.fill();
-  }
+  fillMarks(ctx, c, f.id, hl, hh);
   // Soft belly highlight for volume.
   const g = ctx.createLinearGradient(0, -hh, 0, hh);
   g.addColorStop(0, 'rgba(0,0,0,0.18)');
@@ -284,6 +314,10 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
   g.addColorStop(1, '#b9c3bd');
   ctx.fillStyle = g;
   ctx.fill();
+  if (p.state === 'chase') {
+    ctx.fillStyle = 'rgba(220,40,30,0.4)';
+    ctx.fill();
+  }
   ctx.strokeStyle = 'rgba(0,0,0,0.5)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
@@ -317,5 +351,28 @@ function drawPredator(ctx: CanvasRenderingContext2D, p: PredatorSnap, t: Time): 
   ctx.arc(hl * 0.65, -hh * 0.3, hh * 0.08, 0, Math.PI * 2);
   ctx.fill();
 
+  ctx.restore();
+}
+
+/** Vision rays and a ring around the selected fish. */
+function drawSelection(ctx: CanvasRenderingContext2D, scene: Snapshot, sel: SelectedFish): void {
+  const f = scene.fish.find(x => x.id === sel.id)!;
+  const { viewAngle, viewRange } = sel.traits;
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  for (let i = 0; i < CONFIG.RAY_COUNT; i++) {
+    const a = rayAngle(f.heading, viewAngle, i);
+    const hit = Math.max(...sel.inputs.slice(3 * i, 3 * i + 3));
+    ctx.strokeStyle = `rgba(255,255,255,${0.15 + 0.7 * hit})`;
+    ctx.beginPath();
+    ctx.moveTo(f.x, f.y);
+    ctx.lineTo(f.x + Math.cos(a) * viewRange, f.y + Math.sin(a) * viewRange);
+    ctx.stroke();
+  }
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(f.x, f.y, f.size * FISH_DRAW_SCALE * 2.2, 0, Math.PI * 2);
+  ctx.stroke();
   ctx.restore();
 }

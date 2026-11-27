@@ -1,5 +1,32 @@
 html, body { margin: 0; height: 100%; background: #0b1820; overflow: hidden; font-family: system-ui, sans-serif; }
-#tank { display: block; width: 100vw; height: 100vh; }
+#tank { position: fixed; left: 0; top: 0; width: calc(100vw - 440px); height: 100vh; display: block; }
 #bar { position: fixed; top: 10px; left: 10px; display: flex; gap: 6px; }
-#bar button { background: rgba(10,25,35,0.75); color: #dfe; border: 1px solid #3a5868; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+#bar button, .tabs button { color: #dfe; border: 1px solid #3a5868; border-radius: 6px; cursor: pointer; }
+#bar button { background: rgba(10,25,35,0.75); padding: 6px 10px; }
+#bar button[data-act="restart"] { margin-left: 18px; }
 #bar button:hover { background: rgba(30,60,75,0.9); }
+#bar button.active, .tabs button.active { background: #2f6f8a; border-color: #7fc4de; }
+#bar span { align-self: center; color: #dfe; font-size: 13px; font-variant-numeric: tabular-nums; }
+#extinct { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; background: rgba(5,12,18,0.7); color: #fff; font-size: 28px; }
+#extinct[hidden] { display: none; }
+#extinct button { font-size: 16px; }
+
+#side { position: fixed; right: 0; top: 0; bottom: 0; width: 440px; box-sizing: border-box; padding: 10px; overflow-y: auto; background: #0e222d; border-left: 1px solid #28424f; color: #cde; font-size: 12px; }
+#side canvas { display: block; }
+.tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+.tabs button { background: #12303d; padding: 4px 10px; }
+.msg { color: #8ab; padding: 6px 0; }
+.bar { height: 6px; background: #1c3442; border-radius: 3px; margin: 6px 0; }
+#energy-fill { height: 100%; background: #e6c84a; border-radius: 3px; }
+.swatches { display: flex; gap: 12px; margin: 6px 0; }
+.swatches > div { padding: 3px; border: 1px solid transparent; border-radius: 4px; }
+.swatches > div.expressed { border-color: #7fc4de; }
+#fish-genes { color: #9bb; line-height: 1.5; margin-bottom: 6px; }
+canvas.brain { width: 100%; background: #0a1a23; border-radius: 6px; margin-top: 6px; }
+.legend { color: #9bb; line-height: 1.6; margin-top: 4px; }
+#charts { margin-top: 14px; border-top: 1px solid #28424f; padding-top: 8px; }
+.chart-row { margin-bottom: 8px; }
+.chart-head { display: flex; justify-content: space-between; color: #9bb; }
+.chart-val { color: #dfe; }
+.chart-row canvas { width: 100%; background: #0a1a23; border-radius: 3px; }
+.pattern-line { display: flex; align-items: center; gap: 6px; }

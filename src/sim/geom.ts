@@ -10,20 +10,14 @@ export function clamp(v: number, lo: number, hi: number): number {
   return v < lo ? lo : v > hi ? hi : v;
 }
 
-/**
- * Distance along a unit ray (ox,oy)+(dx,dy)·t to the first hit with a circle,
- * or null if the ray misses or the circle is behind the origin.
- */
-export function rayCircle(
-  ox: number, oy: number, dx: number, dy: number,
-  cx: number, cy: number, r: number,
-): number | null {
-  const lx = cx - ox, ly = cy - oy;
-  const proj = lx * dx + ly * dy;
-  const d2 = lx * lx + ly * ly - proj * proj;
-  const r2 = r * r;
-  if (d2 > r2) return null;
-  const half = Math.sqrt(r2 - d2);
-  if (proj + half < 0) return null;
-  return Math.max(proj - half, 0);
+/** Keeps a body of radius r inside the water and bounces its heading off the wall it hit. */
+export function keepInTank(b: { x: number; y: number; heading: number }, r: number, w: number, waterH: number): void {
+  const dx = Math.cos(b.heading), dy = Math.sin(b.heading);
+  let hitX = false, hitY = false;
+  if (b.x < r) { b.x = r; hitX = dx < 0; }
+  else if (b.x > w - r) { b.x = w - r; hitX = dx > 0; }
+  if (b.y < r) { b.y = r; hitY = dy < 0; }
+  else if (b.y > waterH - r) { b.y = waterH - r; hitY = dy > 0; }
+  if (hitX) b.heading = wrapAngle(Math.PI - b.heading);
+  if (hitY) b.heading = wrapAngle(-b.heading);
 }

@@ -1,0 +1,130 @@
+import { expect, test } from 'vitest';
+import { CONFIG } from '../../src/sim/config';
+import { FoodSystem } from '../../src/sim/food';
+import { FertilizerField } from '../../src/sim/nutrients';
+import { Rng } from '../../src/sim/rng';
+
+const W = CONFIG.TANK_W, H = CONFIG.TANK_H;
+
+function makeField(level: number): FertilizerField {
+  const f = new FertilizerField(CONFIG.FIELD_COLS, CONFIG.FIELD_ROWS, W, H);
+  f.cells.fill(level);
+  return f;
+}
+
+test('rocks sit on the sand inside the tank, algae on the sand and rock tops', () => {
+  const food = new FoodSystem(new Rng(1), W, H);
+  expect(food.rocks.length).toBe(CONFIG.ROCK_COUNT);
+  for (const r of food.rocks) {
+    expect(r.x).toBeGreaterThan(0);
+    expect(r.x).toBeLessThan(W);
+    expect(r.y).toBe(H - CONFIG.SAND_H);
+  }
+  expect(food.algae.length).toBe(CONFIG.ALGAE_CELLS);
+  const onRocks = food.algae.filter((a) => a.y < H - CONFIG.SAND_H);
+  expect(onRocks.length).toBe(CONFIG.ROCK_COUNT * CONFIG.ALGAE_PER_ROCK);
+  // Each sits on the surface of a rock's half-ellipse, not above it.
+  for (const a of onRocks) {
+    expect(food.rocks.some((r) => Math.abs(((a.x - r.x) / r.rx) ** 2 + ((a.y - r.y) / r.ry) ** 2 - 1) < 1e-9)).toBe(true);
+  }
+  for (const a of food.algae) {
+    expect(a.x).toBeGreaterThanOrEqual(0);
+    expect(a.x).toBeLessThanOrEqual(W);
+  }
+});
+
+test('food step conserves field+food total', () => {
+  const f = makeField(1);
+  const rng = new Rng(1);
+  const food = new FoodSystem(rng, W, H);
+  food.addWaste(100, 100, 50);
+  const before = f.total() + food.total();
+  for (let i = 0; i < 3000; i++) {
+    food.step(f, rng, 0);
+    f.diffuse(0.1);
+  }
+  expect(f.total() + food.total()).toBeCloseTo(before, 4);
+  expect(food.plankton.length).toBeGreaterThan(0);
+  for (const p of food.plankton) expect(p.y >= 0 && p.y <= H - CONFIG.SAND_H && p.x >= 0 && p.x <= W).toBe(true);
+});
+
+// Few ticks, so that neither field runs out.
+test('algae grows faster with more fertilizer', () => {
+  const run = (level: number) => {
+    const f = makeField(level);
+    const rng = new Rng(2);
+    const food = new FoodSystem(rng, W, H);
+    for (let i = 0; i < 10; i++) food.step(f, rng, 0);
+    return food.algae.reduce((s, a) => s + a.biomass, 0);
+  };
+  expect(run(2)).toBeGreaterThan(run(0.2));
+});
+
+test('algae biomass never exceeds the cap', () => {
+  const f = makeField(50);
+  const rng = new Rng(3);
+  const food = new FoodSystem(rng, W, H);
+  for (let i = 0; i < 2000; i++) food.step(f, rng, 0);
+  for (const a of food.algae) expect(a.biomass).toBeLessThanOrEqual(CONFIG.ALGAE_MAX + 1e-9);
+});
+
+test('eatAlgae and removePlankton return what was actually taken', () => {
+  const f = makeField(5);
+  const rng = new Rng(4);
+  const food = new FoodSystem(rng, W, H);
+  for (let i = 0; i < 300; i++) food.step(f, rng, 0);
+  const cell = food.algae[0];
+  const have = cell.biomass;
+  expect(food.eatAlgae(cell, have + 100)).toBe(have);
+  expect(cell.biomass).toBe(0);
+  const p = food.plankton[0];
+  expect(food.removePlankton(p)).toBe(p.amount);
+  expect(food.plankton).not.toContain(p);
+  expect(food.removePlankton(p)).toBe(0);
+});
+
+test('no plankton spawns from a field at the minimum', () => {
+  const rng = new Rng(6);
+  const food = new FoodSystem(rng, W, H);
+  food.step(makeField(CONFIG.PLANKTON_FERT_MIN), rng, 0);
+  expect(food.plankton).toEqual([]);
+});
+
+test('waste sinks, then dissolves into the field once on the bottom', () => {
+  const f = makeField(0);
+  const rng = new Rng(5);
+  const food = new FoodSystem(rng, W, H);
+  food.algae.length = 0;
+  food.addWaste(800, 100, 10);
+  const w = food.waste[0];
+  food.step(f, rng, 0);
+  expect(w.y).toBeGreaterThan(100);
+  expect(f.total()).toBeGreaterThan(0);
+  for (let i = 0; i < 5000; i++) food.step(f, rng, 0);
+  expect(food.waste.length).toBe(0);
+  expect(f.total() + food.total()).toBeCloseTo(10, 6);
+});
+
+test('plankton spawns under the light spot, which sweeps the tank', () => {
+  const meanX = (tick: number) => {
+    const rng = new Rng(7);
+    const food = new FoodSystem(rng, W, H);
+    for (let i = 0; i < 50; i++) food.step(makeField(5), rng, tick);
+    return food.plankton.reduce((s, p) => s + p.x, 0) / food.plankton.length;
+  };
+  expect(meanX(0)).toBeLessThan(W / 4);
+  expect(meanX(CONFIG.LIGHT_PERIOD_TICKS / 2)).toBeGreaterThan((W * 3) / 4);
+});
+
+test('plankton dies off in the dark and dissolves; under the light it lives', () => {
+  const f = makeField(0);
+  const rng = new Rng(8);
+  const food = new FoodSystem(rng, W, H);
+  food.algae.length = 0;
+  const lit = { x: 0, y: 0, vx: 0, vy: 0, amount: 1 };
+  food.plankton = [lit, ...Array.from({ length: 50 }, () => ({ x: W, y: 500, vx: 0, vy: 0, amount: 1 }))];
+  for (let i = 0; i < 3000; i++) food.step(f, rng, 0);
+  expect(food.plankton).toContain(lit);
+  expect(food.plankton.length).toBeLessThan(20);
+  expect(f.total() + food.total()).toBeCloseTo(51, 6);
+});
