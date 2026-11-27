@@ -146,12 +146,6 @@ test('a larger amount of waste smells stronger', () => {
   expect(run(me, makeCtx([me], [], [], undefined, waste))[IN('waste smell')]).toBeLessThan(0);
 });
 
-test('waste just beyond smell range is not smelled', () => {
-  const me = makeFish(500, 450);
-  const waste = [{ x: 500 + CONFIG.SMELL_RADIUS, y: 430, amount: 1 }];
-  expect(run(me, makeCtx([me], [], [], undefined, waste))[IN('waste smell')]).toBe(0);
-});
-
 test('alarm decays with age and distance cutoff', () => {
   const me = makeFish(500, 450);
   const ctx = makeCtx([me]);

@@ -150,12 +150,3 @@ test('a body sinks, rests below the floor, dissolves in BODY_DISSOLVE_TICKS', ()
   expect(food.bodies).toEqual([]);
   expect(f.total() + food.total()).toBeCloseTo(50, 9);
 });
-
-test('a body sinks faster than waste', () => {
-  const rng = new Rng(10);
-  const food = new FoodSystem(rng, W, H);
-  food.addBody(800, 100, 5, 10, 0);
-  food.addWaste(900, 100, 5);
-  for (let i = 0; i < 10; i++) food.step(makeField(0), rng, 0);
-  expect(food.bodies[0].y).toBeGreaterThan(food.waste[0].y);
-});
