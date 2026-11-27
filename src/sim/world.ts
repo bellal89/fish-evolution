@@ -3,7 +3,7 @@ import { CONFIG } from './config';
 import {
   advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, type Fish,
 } from './fish';
-import { FoodSystem, type AlgaeCell, type Plankton } from './food';
+import { FoodSystem, type AlgaeCell, type Dirt, type Plankton } from './food';
 import { Lineage } from './lineage';
 import { FertilizerField } from './nutrients';
 import { ScriptedPredator, createPredator, stepPredator, type Predator, type PredatorView } from './predator';
@@ -78,6 +78,7 @@ export class World {
   private readonly controller = new ScriptedPredator();
   private readonly fishGrid = new SpatialGrid<Fish>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
   private readonly foodGrid = new SpatialGrid<FoodItem>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
+  private readonly dirtGrid = new SpatialGrid<Dirt>(CONFIG.GRID_CELL, CONFIG.TANK_W, CONFIG.TANK_H);
   private alarms: Alarm[] = [];
   private nextId = 1;
   private readonly newId = () => this.nextId++;
@@ -125,7 +126,7 @@ export class World {
     }
 
     this.senseCtx = {
-      food: this.foodGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
+      food: this.foodGrid, waste: this.dirtGrid, fish: this.fishGrid, predators: this.predators, alarms: this.alarms,
       tick: 0, bg, tankW: CONFIG.TANK_W, tankH: CONFIG.TANK_H,
     };
     this.predView = { fish: this.fishGrid, eggs: this.eggs, bg };
@@ -171,6 +172,9 @@ export class World {
     for (const a of this.food.algae) this.foodGrid.insert({ x: a.x, y: a.y, amount: a.biomass, kind: 'algae', src: a });
     for (const p of this.food.plankton) this.foodGrid.insert({ x: p.x, y: p.y, amount: p.amount, kind: 'plankton', src: p });
     for (const e of this.eggs) this.foodGrid.insert({ x: e.x, y: e.y, amount: e.energy, kind: 'egg', src: e });
+    this.dirtGrid.clear();
+    for (const d of this.food.waste) this.dirtGrid.insert({ x: d.x, y: d.y, amount: d.amount, size: 0 });
+    for (const b of this.food.bodies) this.dirtGrid.insert({ x: b.x, y: b.y, amount: b.amount, size: b.size });
     this.senseCtx.alarms = this.alarms = this.alarms.filter(a => this.tick - a.tick < CONFIG.ALARM_TICKS);
     this.senseCtx.tick = this.tick;
     this.predView.eggs = this.eggs;

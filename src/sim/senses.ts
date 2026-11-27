@@ -10,6 +10,8 @@ export type SensingPredator = Pick<Predator, 'x' | 'y' | 'speed' | 'maxSpeed' | 
 
 export interface SenseContext {
   food: SpatialGrid<{ x: number; y: number; amount: number }>;
+  /** Waste and dead bodies. */
+  waste: SpatialGrid<{ x: number; y: number; amount: number }>;
   fish: SpatialGrid<SensingFish>;
   predators: SensingPredator[];
   alarms: { x: number; y: number; tick: number }[];
@@ -26,7 +28,8 @@ const CH_PRED = 2;
 const IN_MATE = RAYS * 3;
 const IN_LATERAL = IN_MATE + 1;
 const IN_SMELL = IN_LATERAL + 4;
-const IN_ALARM = IN_SMELL + 1;
+const IN_WASTE = IN_SMELL + 1;
+const IN_ALARM = IN_WASTE + 1;
 const IN_WALL = IN_ALARM + 1;
 const IN_ENERGY = IN_WALL + 1;
 const IN_AGE = IN_ENERGY + 1;
@@ -40,6 +43,7 @@ export const INPUT_LABELS: string[] = [
   'felt left',
   'felt right',
   'smell',
+  'waste smell',
   'alarm',
   'wall',
   'energy',
@@ -135,8 +139,9 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
   const sx = Math.sin(f.heading) * CONFIG.SMELL_SIDE_OFFSET;
   const sy = -Math.cos(f.heading) * CONFIG.SMELL_SIDE_OFFSET;
   const lx = f.x + sx, ly = f.y + sy, rx = f.x - sx, ry = f.y - sy;
+  const smellR = CONFIG.SMELL_RADIUS + CONFIG.SMELL_SIDE_OFFSET + 1;
   let left = 0, right = 0;
-  for (const p of ctx.food.query(f.x, f.y, Math.max(foodR, CONFIG.SMELL_RADIUS + CONFIG.SMELL_SIDE_OFFSET + 1))) {
+  for (const p of ctx.food.query(f.x, f.y, Math.max(foodR, smellR))) {
     if (within(p, f.x, f.y, foodR)) castAt(f, CH_FOOD, p.x, p.y, CONFIG.SENSE_FOOD_RADIUS, viewRange);
     left += smellOf(p, lx, ly);
     right += smellOf(p, rx, ry);
@@ -172,6 +177,13 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
   for (let q = 0; q < 4; q++) out[IN_LATERAL + q] = Math.min(1, lateral[q]);
 
   out[IN_SMELL] = (left - right) / (left + right + CONFIG.SMELL_EPS);
+
+  let wasteLeft = 0, wasteRight = 0;
+  for (const p of ctx.waste.query(f.x, f.y, smellR)) {
+    wasteLeft += smellOf(p, lx, ly);
+    wasteRight += smellOf(p, rx, ry);
+  }
+  out[IN_WASTE] = (wasteLeft - wasteRight) / (wasteLeft + wasteRight + CONFIG.SMELL_EPS);
 
   let alarm = 0;
   const r2 = CONFIG.ALARM_RADIUS * CONFIG.ALARM_RADIUS;

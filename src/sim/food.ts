@@ -28,6 +28,15 @@ export interface Body {
   bottomTicks: number;
 }
 
+/** Waste or a dead body, as the smell and the harm check see it. */
+export interface Dirt {
+  x: number;
+  y: number;
+  amount: number;
+  /** 0 for a waste speck, else the body size. */
+  size: number;
+}
+
 /** Algae, plankton, waste, dead bodies and rocks. */
 export class FoodSystem {
   algae: AlgaeCell[] = [];

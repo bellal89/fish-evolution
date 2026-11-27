@@ -1,5 +1,6 @@
 import { expect, test } from 'vitest';
 import { CONFIG } from '../../src/sim/config';
+import { INPUT_LABELS } from '../../src/sim/senses';
 import { World } from '../../src/sim/world';
 
 const drift = (w: World, t0: number) => Math.abs(w.totalNutrients() - t0) / t0;
@@ -51,7 +52,7 @@ function encounter(satiety: number) {
   w.fish = [f, g];
   f.traits.colorM = { hue: 0, brightness: 1, pattern: 'stripes', patternCount: 3, hue2: 0.5 };
   f.sex = 'M';
-  f.x = p.x + 1;
+  f.x = p.x + 10; // Far enough ahead that the fish stays in view after it moves.
   f.y = g.y = p.y;
   g.x = p.x - 150;
   p.heading = 0;
@@ -68,7 +69,7 @@ test('a hungry predator attacks and eats a touching fish, stops the chase and al
   expect(p.satiety).toBe(CONFIG.PRED_SATIETY_TICKS);
   expect([p.state, p.targetId]).toEqual(['patrol', null]);
   w.step();
-  expect(g.lastInputs[21]).toBeGreaterThan(0); // the kill raised an alarm
+  expect(g.lastInputs[INPUT_LABELS.indexOf('alarm')]).toBeGreaterThan(0); // the kill raised an alarm
 });
 
 test('a fish eaten by the predator leaves no body', () => {
@@ -143,3 +144,19 @@ test('restore keeps bodies', () => {
   const state = (w: World) => JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
   expect(state(b)).toBe(state(a));
 }, 60_000);
+
+test('fish smell bodies in the world', () => {
+  const w = new World(1);
+  const [f] = w.fish;
+  w.fish = [f];
+  w.predators.length = 0;
+  w.food.algae.length = 0;
+  w.food.plankton.length = 0;
+  w.food.waste.length = 0;
+  f.x = 500;
+  f.y = 400;
+  f.heading = 0;
+  w.food.addBody(500, 350, 20, 10, 0);
+  w.step();
+  expect(f.lastInputs[INPUT_LABELS.indexOf('waste smell')]).toBeGreaterThan(0);
+});
