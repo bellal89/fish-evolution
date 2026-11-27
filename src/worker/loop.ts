@@ -58,7 +58,7 @@ export class SimLoop {
     this.advance(elapsed);
     if (nowMs - this.lastPost >= CONFIG.SNAPSHOT_INTERVAL_MS) {
       this.lastPost = nowMs;
-      this.post({ type: 'snapshot', snap: makeSnapshot(this.world, this.stats, this.selectedId, this.statsDirty) });
+      this.post({ type: 'snapshot', snap: makeSnapshot(this.world, this.selectedId, this.statsDirty ? this.stats.history : undefined) });
       this.statsDirty = false;
     }
   }

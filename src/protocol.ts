@@ -66,6 +66,23 @@ export interface SelectedFish {
 
 export type Speed = 0 | 1 | 10 | 50 | 'max';
 
+/** 0 is the left arena side, 1 the right. */
+export type Side = 0 | 1;
+
+/** Where the brain of an arena side comes from. `index` is in the leader history, oldest first. */
+export type BrainChoice = { kind: 'random' } | { kind: 'leader' } | { kind: 'selected' } | { kind: 'history'; index: number };
+
+export type ArenaSpeed = 0 | 1 | 10;
+
+export interface ArenaSideView {
+  /** `scene.selected` is the fish whose brain the UI draws. */
+  scene: Snapshot;
+  /** Food eaten by the side since the start. */
+  foodEaten: number;
+  /** The brain of the side, also when all its fish are dead. */
+  genome: Genome;
+}
+
 export type ToWorker =
   | { type: 'speed'; speed: Speed }
   | { type: 'select'; id: number | null }
