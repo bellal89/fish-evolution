@@ -1,5 +1,6 @@
 import { CONFIG } from './config';
 import { clamp } from './geom';
+import { lightAt } from './light';
 import type { FertilizerField } from './nutrients';
 import type { Rng } from './rng';
 
@@ -45,9 +46,9 @@ export class FoodSystem {
     }
   }
 
-  step(field: FertilizerField, rng: Rng): void {
+  step(field: FertilizerField, rng: Rng, tick: number): void {
     this.growAlgae(field);
-    this.spawnPlankton(field, rng);
+    this.spawnPlankton(field, rng, tick);
     this.movePlankton(rng);
     this.moveWaste(field);
   }
@@ -59,11 +60,12 @@ export class FoodSystem {
     }
   }
 
-  private spawnPlankton(field: FertilizerField, rng: Rng): void {
+  /** Plankton spawns where there is fertilizer, more often where the light is stronger. */
+  private spawnPlankton(field: FertilizerField, rng: Rng, tick: number): void {
     for (let i = 0; i < CONFIG.PLANKTON_TRIES; i++) {
       if (this.plankton.length >= CONFIG.PLANKTON_MAX) return;
       const x = rng.range(0, this.w), y = rng.range(0, this.floorY);
-      if (field.at(x, y) <= CONFIG.PLANKTON_FERT_MIN) continue;
+      if (field.at(x, y) <= CONFIG.PLANKTON_FERT_MIN || !rng.chance(lightAt(x, y, tick))) continue;
       const amount = field.take(x, y, CONFIG.PLANKTON_AMOUNT);
       this.plankton.push({ x, y, vx: 0, vy: 0, amount });
     }

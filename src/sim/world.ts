@@ -113,7 +113,7 @@ export class World {
     this.stepPredators();
     this.hatchEggs();
     this.removeDead();
-    this.food.step(this.field, this.rng);
+    this.food.step(this.field, this.rng, this.tick);
     this.field.diffuse(CONFIG.FERT_DIFFUSION);
     this.tick++;
     this.extinct = this.fish.length === 0 && this.eggs.length === 0;
@@ -153,7 +153,11 @@ export class World {
   private eat(f: Fish): void {
     let got = 0;
     for (const it of this.foodGrid.query(f.x, f.y, f.traits.size + CONFIG.EAT_REACH)) {
-      if (it.kind === 'algae') got += this.food.eatAlgae(it.src, CONFIG.BITE);
+      if (it.kind === 'algae') {
+        if (f.biteCooldown > 0 || it.src.biomass === 0) continue;
+        got += this.food.eatAlgae(it.src, CONFIG.BITE);
+        f.biteCooldown = CONFIG.BITE_COOLDOWN;
+      }
       else if (it.kind === 'plankton') got += this.food.removePlankton(it.src);
       // The clutch is laid between the parents, so they would eat it at once.
       else if (!it.src.parents.includes(f.id)) got += this.removeEgg(it.src);

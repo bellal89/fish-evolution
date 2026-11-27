@@ -85,13 +85,17 @@ test('a chase whose target is gone counts as an escape', () => {
   expect(w.events.escapes).toBe(1);
 });
 
-test('a fish on an algae cell eats', () => {
+test('a fish on an algae cell takes one bite, then waits', () => {
   const w = new World(1);
   const [f] = w.fish;
   w.fish = [f];
   w.predators.length = 0;
-  f.x = w.food.algae[0].x;
-  f.y = w.food.algae[0].y - f.traits.size;
+  const cell = w.food.algae[0];
+  cell.biomass = CONFIG.ALGAE_MAX;
+  f.x = cell.x;
+  f.y = cell.y - f.traits.size;
   w.step();
-  expect(w.events.foodEaten).toBeGreaterThan(0);
+  w.step();
+  expect(cell.biomass).toBeCloseTo(CONFIG.ALGAE_MAX - CONFIG.BITE, 1);
+  expect(f.biteCooldown).toBe(CONFIG.BITE_COOLDOWN - 1);
 });

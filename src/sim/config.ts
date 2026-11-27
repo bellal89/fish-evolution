@@ -78,11 +78,17 @@ export const CONFIG = {
   ALGAE_MAX: 10,
   /** Fraction of local fertilizer converted to algae biomass per tick. */
   ALGAE_GROWTH: 0.002,
-  PLANKTON_TRIES: 10,
+  PLANKTON_TRIES: 30,
+  /** One full sweep of the light spot, left to right and back (2 sim minutes). */
+  LIGHT_PERIOD_TICKS: 7200,
+  /** Distance from the spot center at which light falls to 1/e. */
+  LIGHT_SPOT_WIDTH: 300,
+  /** Fraction of the light lost from the surface to the sand. */
+  LIGHT_DEPTH_FADE: 0.7,
   /** Local fertilizer needed before plankton can spawn. */
   PLANKTON_FERT_MIN: 0.5,
-  PLANKTON_AMOUNT: 1,
-  PLANKTON_MAX: 600,
+  PLANKTON_AMOUNT: 2,
+  PLANKTON_MAX: 400,
   /** Std dev of the random velocity kick per tick. */
   PLANKTON_DRIFT: 0.02,
   PLANKTON_DAMPING: 0.98,
@@ -167,8 +173,10 @@ export const CONFIG = {
   INITIAL_FISH_ENERGY: 80,
   /** All nutrients in the tank. */
   TOTAL_NUTRIENTS: 18000,
-  /** Most algae biomass a fish eats per tick from one cell. */
-  BITE: 0.5,
+  /** Most algae biomass one bite takes: a full cell lasts ALGAE_MAX / BITE bites. */
+  BITE: 1,
+  /** Ticks between two algae bites of one fish. */
+  BITE_COOLDOWN: 30,
   /** A fish touches food within its size plus this. */
   EAT_REACH: 4,
   /** Ticks a predator stays sated after eating a fish. */

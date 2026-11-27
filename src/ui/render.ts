@@ -1,6 +1,7 @@
 import { CONFIG } from '../sim/config';
 import type { ColorGenes } from '../sim/traits';
 import { rayAngle } from '../sim/senses';
+import { lightCenter } from '../sim/light';
 import type { FishView, PredatorSnap, Rock, SelectedFish, Snapshot } from '../protocol';
 import { patternMarks } from './patterns';
 import type { View } from './view';
@@ -59,7 +60,7 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: Snapshot, vie
   ctx.rect(0, 0, W, H);
   ctx.clip();
 
-  drawWater(ctx, W, H, t);
+  drawWater(ctx, W, H, t, scene.tick);
   drawSand(ctx, W, H);
   for (const r of scene.rocks) drawRock(ctx, r);
   for (const a of scene.food.algae) drawAlgae(ctx, a.x, a.y, a.biomass, t);
@@ -71,7 +72,7 @@ export function drawAquarium(ctx: CanvasRenderingContext2D, scene: Snapshot, vie
   ctx.restore();
 }
 
-function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time): void {
+function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time, tick: number): void {
   const hue = CONFIG.BG_WATER_HUE * 360;
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, `hsl(${hue - 8}, 55%, 46%)`);
@@ -80,21 +81,24 @@ function drawWater(ctx: CanvasRenderingContext2D, W: number, H: number, t: Time)
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  // Decorative light shafts — light has no effect on the simulation.
+  // Light shafts gather around the light spot, which feeds the plankton.
+  const cx = lightCenter(tick);
   ctx.save();
   ctx.globalCompositeOperation = 'lighter';
   for (let i = 0; i < 6; i++) {
-    const x = ((i + 0.5) / 6) * W + Math.sin(t * 0.15 + i * 1.7) * 60;
+    const off = (i / 5 - 0.5) * 2 * CONFIG.LIGHT_SPOT_WIDTH;
+    const x = cx + off + Math.sin(t * 0.15 + i * 1.7) * 30;
     const w = 50 + 30 * Math.sin(i * 2.3);
+    const alpha = 0.16 * Math.exp(-((off / CONFIG.LIGHT_SPOT_WIDTH) ** 2));
     const lg = ctx.createLinearGradient(0, 0, 0, H * 0.9);
-    lg.addColorStop(0, 'rgba(200,240,255,0.10)');
+    lg.addColorStop(0, `rgba(200,240,255,${alpha})`);
     lg.addColorStop(1, 'rgba(200,240,255,0)');
     ctx.fillStyle = lg;
     ctx.beginPath();
     ctx.moveTo(x - w * 0.5, 0);
     ctx.lineTo(x + w * 0.5, 0);
-    ctx.lineTo(x + w * 1.6 + 120, H * 0.9);
-    ctx.lineTo(x + w * 0.2 + 120, H * 0.9);
+    ctx.lineTo(x + w * 0.8, H * 0.9);
+    ctx.lineTo(x - w * 0.8, H * 0.9);
     ctx.closePath();
     ctx.fill();
   }

@@ -22,6 +22,8 @@ export interface Fish {
   parents: [number, number] | null;
   children: number;
   mateCooldown: number;
+  /** Ticks left before the fish can bite algae again. */
+  biteCooldown: number;
   lastOutputs: Float32Array;
   lastInputs: Float32Array;
   /** Mature, enough energy and off cooldown. */
@@ -42,7 +44,7 @@ export function createFish(
 ): Fish {
   const f: Fish = {
     id, x, y, heading: 0, speed: 0, energy, gut: 0, age: 0, sex, traits, genome,
-    brain: new Network(genome), parents, children: 0, mateCooldown: 0,
+    brain: new Network(genome), parents, children: 0, mateCooldown: 0, biteCooldown: 0,
     lastOutputs: new Float32Array(OUTPUT_COUNT), lastInputs: new Float32Array(INPUT_COUNT),
     ready: false,
   };
@@ -91,6 +93,7 @@ export function excrete(b: { gut: number }): number {
 export function advanceAge(f: Fish): void {
   f.age += 1;
   f.mateCooldown = Math.max(0, f.mateCooldown - 1);
+  f.biteCooldown = Math.max(0, f.biteCooldown - 1);
 }
 
 export function isDead(f: Fish): boolean {
