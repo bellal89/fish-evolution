@@ -22,6 +22,7 @@ html, body { margin: 0; height: 100%; background: #0b1820; overflow: hidden; fon
 .swatches > div.expressed { border-color: #7fc4de; }
 #fish-genes { color: #9bb; line-height: 1.5; margin-bottom: 6px; }
 canvas.brain { width: 100%; background: #0a1a23; border-radius: 6px; margin-top: 6px; }
+.legend { color: #9bb; line-height: 1.6; margin-top: 4px; }
 #charts { margin-top: 14px; border-top: 1px solid #28424f; padding-top: 8px; }
 .chart-row { margin-bottom: 8px; }
 .chart-head { display: flex; justify-content: space-between; color: #9bb; }

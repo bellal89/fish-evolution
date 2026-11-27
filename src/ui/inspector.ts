@@ -10,6 +10,15 @@ interface Inspector {
   setWanted(id: number | null): void;
 }
 
+function legend(nodes: string): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'legend';
+  el.innerHTML =
+    'Links: <span style="color:#5ac878">━</span> excites · <span style="color:#e65a5a">━</span> inhibits · thicker = stronger' +
+    `<br>Nodes: ${nodes}`;
+  return el;
+}
+
 export function mountInspector(root: HTMLElement): Inspector {
   root.innerHTML = `
     <div class="tabs"><button data-tab="fish" class="active">Fish</button><button data-tab="leader">Leader brain</button></div>
@@ -38,10 +47,12 @@ export function mountInspector(root: HTMLElement): Inspector {
 
   const fishBrain = makeCanvas(420, 340);
   fishBrain.className = 'brain';
-  body.append(fishBrain);
+  body.append(fishBrain, legend(
+    '<span style="color:#ffdc5a">●</span> positive · <span style="color:#5aaaff">●</span> negative · brighter = stronger',
+  ));
   const leaderBrain = makeCanvas(420, 340);
   leaderBrain.className = 'brain';
-  leaderTab.append(leaderBrain);
+  leaderTab.append(leaderBrain, legend('no live values, the leader may be dead'));
 
   const swatchCanvases = [0, 1].map(() => {
     const c = makeCanvas(56, 28);
