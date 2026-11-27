@@ -1,6 +1,6 @@
 # Fish evolution
 
-A 2D aquarium in the browser where fish evolve on their own. Each fish has a NEAT neural network for a brain and genes for body (size, speed, vision, lifespan, mating threshold) and color (hue, brightness, pattern, separate for males and females). There is no fitness function and no generations: fish eat algae, plankton and eggs, mate with partners whose color they like, and get eaten by a scripted predator that spots bright, contrasting fish more easily. Nutrients go round a closed cycle (fish, waste, fertilizer, algae and plankton, back to fish), so the tank holds only as many fish as the nutrients allow. Whatever survives and breeds is what you see.
+A 2D aquarium in the browser where fish evolve on their own. Each fish has a NEAT neural network for a brain and genes for body (size, speed, vision, lifespan, mating threshold) and color (hue, brightness, pattern, separate for males and females). There is no fitness function and no generations: fish eat algae, plankton and eggs, mate with partners whose color they like, and get eaten by a scripted predator that spots fish more easily when they contrast with the background. Nutrients go round a closed cycle (fish, waste, fertilizer, algae and plankton, back to fish), so the tank holds only as many fish as the nutrients allow. Whatever survives and breeds is what you see.
 
 ## Run locally
 
@@ -11,7 +11,7 @@ npm test
 npm run build    # static site in dist/
 ```
 
-Headless run, without the UI (seed defaults to 1, ticks to 500000; prints stats every 18 000 ticks, then a summary):
+Headless run, without the UI (seed defaults to 1, ticks to 500 000; prints stats every 18 000 ticks, then a summary):
 
 ```sh
 npx tsx scripts/headless.ts [seed] [ticks]
@@ -21,7 +21,7 @@ npx tsx scripts/headless.ts [seed] [ticks]
 
 - **Population**: all fish, males and females.
 - **Eggs**: eggs waiting to hatch.
-- **Avg lifespan**: age at death of the fish that died recently.
+- **Avg lifespan**: average age of the fish that died between samples.
 - **Offspring per fish**: average children of living fish.
 - **Size**, **Speed**: average body genes.
 - **Hidden neurons**, **Connections**: brain size, the population average and the leader (the ancestor with the most living descendants).

@@ -65,8 +65,7 @@ function hit(ray: number, ch: number, dist: number): void {
 function castAt(
   f: SensingFish, ch: number, cx: number, cy: number, r: number, range: number,
 ): number {
-  // Ray vs circle: distance to the first hit along each unit ray; a miss if the
-  // ray passes the circle or the circle is behind. Ray-independent terms hoisted.
+  // Ray vs circle: a miss if the ray passes the circle or the circle is behind.
   const lx = cx - f.x, ly = cy - f.y;
   const l2 = lx * lx + ly * ly;
   const r2 = r * r;

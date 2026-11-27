@@ -16,7 +16,7 @@ export interface Rock {
 }
 export interface Waste { x: number; y: number; vy: number; amount: number; bottomTicks: number }
 
-/** Algae, plankton and waste: everything that holds nutrients outside the fertilizer field. */
+/** Algae, plankton, waste and rocks. */
 export class FoodSystem {
   algae: AlgaeCell[] = [];
   plankton: Plankton[] = [];
@@ -104,7 +104,7 @@ export class FoodSystem {
     return eaten;
   }
 
-  /** Removes the plankton and returns its nutrient amount (0 if already removed). */
+  /** Removes the plankton and returns its amount (0 if already removed). */
   removePlankton(p: Plankton): number {
     const i = this.plankton.indexOf(p);
     if (i < 0) return 0;

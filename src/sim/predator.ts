@@ -14,7 +14,7 @@ export interface Predator {
   size: number;
   maxSpeed: number;
   stamina: number;
-  /** Ticks left of not hunting after a meal. */
+  /** Ticks left before the predator hunts again. */
   satiety: number;
   gut: number;
   state: 'patrol' | 'chase' | 'rest';

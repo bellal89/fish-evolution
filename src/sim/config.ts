@@ -6,7 +6,7 @@ export const CONFIG = {
 
   /** Sand layer height. */
   SAND_H: 70,
-  /** Background colors, used by the renderer and by camouflage. */
+  /** Background colors for camouflage. The renderer uses the hues. */
   BG_WATER_HUE: 0.55,
   BG_SAND_HUE: 0.11,
   BG_WATER_BRIGHTNESS: 0.5,
@@ -27,14 +27,12 @@ export const CONFIG = {
   P_INHERIT_DISABLED: 0.75,
 
   // Traits
-  /** [min, max] per numeric trait. Speeds are px/tick, lifespan is in ticks. */
+  /** [min, max] per numeric trait. Speeds are px/tick. */
   TRAIT_RANGES: {
     size: [6, 20],
     maxSpeed: [1, 4],
-    /** Radians. */
     viewAngle: [0.8, 3],
     viewRange: [80, 400],
-    /** Energy needed to mate. */
     mateThreshold: [30, 100],
     investFraction: [0.1, 0.6],
     lifespanTicks: [9000, 24000],
@@ -99,7 +97,7 @@ export const CONFIG = {
   RAY_COUNT: 5,
   /** Radius of the lateral line. */
   LATERAL_RADIUS: 120,
-  /** Movers slower than this are not felt by the lateral line. */
+  /** The lateral line does not feel movers at or below this speed. */
   LATERAL_MIN_SPEED: 1.5,
   /** Half-width of the front and back lateral quadrants, radians. */
   LATERAL_FRONT_HALF_ANGLE: Math.PI / 4,
@@ -126,7 +124,7 @@ export const CONFIG = {
   BRAIN_CONN_COST: 0.00004,
   /** Max heading change per tick at full turn output, radians. */
   TURN_RATE: 0.15,
-  /** Spent energy a fish holds until it is excreted as waste. */
+  /** Gut contents at which a fish or predator excretes them as waste. */
   EXCRETE_AMOUNT: 2,
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
@@ -149,9 +147,9 @@ export const CONFIG = {
   PRED_STAMINA_DRAIN: 1,
   /** Stamina gained per resting or patrolling tick. */
   PRED_STAMINA_REFILL: 0.5,
-  /** Max random turn per tick while wandering, as a share of full turn. */
+  /** Max random turn per tick while patrolling, as a share of full turn. */
   PRED_WANDER_TURN: 0.3,
-  /** An egg this close to the predator's edge is steered toward. */
+  /** The predator steers toward an egg this close to its edge. */
   PRED_EGG_REACH: 15,
   /** Least energy an egg should hold; a clutch is sized by this. */
   EGG_MIN_ENERGY: 10,
@@ -167,7 +165,7 @@ export const CONFIG = {
   INITIAL_FISH: 150,
   /** Energy each initial fish starts with. */
   INITIAL_FISH_ENERGY: 80,
-  /** All nutrients in the tank; the initial fertilizer is what the fish and algae do not hold. */
+  /** All nutrients in the tank. */
   TOTAL_NUTRIENTS: 18000,
   /** Most algae biomass a fish eats per tick from one cell. */
   BITE: 0.5,

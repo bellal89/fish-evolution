@@ -141,7 +141,7 @@ export function accepts(chooser: Traits, c: ColorGenes): boolean {
   return attraction(chooser, c) >= chooser.choosiness * CONFIG.CHOOSY_MAX;
 }
 
-/** How easily a predator spots this color against the background. */
+/** How easily a predator or a fish sees this color against the background, MIN_VISIBILITY..1. */
 export function visibility(c: ColorGenes, bgHue: number, bgBrightness: number): number {
   const v =
     CONFIG.VIS_HUE_W * 2 * hueDist(c.hue, bgHue) +

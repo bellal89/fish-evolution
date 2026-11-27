@@ -101,17 +101,17 @@ test.each([
   }
 });
 
-test('camouflaged fish seen at shorter range than loud fish', () => {
+test('a camouflaged fish is seen at a shorter range than a contrasting fish', () => {
   const bg = { hue: 0.5, brightness: 0.5 };
   const color = (hue: number, brightness: number): ColorGenes =>
     ({ hue, brightness, pattern: 'solid', patternCount: 1, hue2: 0 });
   const me = makeFish(100, 450);
-  const loud = makeFish(100 + 150, 450);
+  const bold = makeFish(100 + 150, 450);
   const camo = makeFish(100 + 150, 450);
-  loud.traits.colorM = color(0, 1);
+  bold.traits.colorM = color(0, 1);
   camo.traits.colorM = color(bg.hue, bg.brightness);
   const seen = (other: SensingFish) => run(me, makeCtx([me, other], [], [], bg))[2 * 3 + 1];
-  expect(seen(loud)).toBeGreaterThan(0);
+  expect(seen(bold)).toBeGreaterThan(0);
   expect(seen(camo)).toBe(0);
 });
 

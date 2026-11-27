@@ -22,7 +22,7 @@ while (w.tick < ticks && !w.extinct) {
   w.step();
   if (w.tick % CONFIG.STATS_EVERY === 0) {
     stats.sample(w);
-    // Taken out so the history never fills up and merges points.
+    // Pop the point so that the history never fills up and merges points.
     const p = stats.history.pop()!;
     points.push(p);
     window.push(p);

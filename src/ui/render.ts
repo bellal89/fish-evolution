@@ -29,7 +29,7 @@ function fillMarks(ctx: CanvasRenderingContext2D, c: ColorGenes, id: number, hl:
   }
 }
 
-/** A tiny fish body with the pattern, for swatches and the top-pattern rows. */
+/** A tiny fish body with the pattern, for swatches and the top-pattern row. */
 export function drawFishIcon(canvas: HTMLCanvasElement, c: ColorGenes): void {
   const ctx = canvas.getContext('2d')!;
   const { width: W, height: H } = canvas;

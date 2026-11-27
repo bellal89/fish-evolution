@@ -30,7 +30,7 @@ export class Lineage {
   }
 
   /** Living descendants of `id`; 0 for unknown ids. */
-  alive(id: number): number {
+  living(id: number): number {
     return this.records.get(id)?.living ?? 0;
   }
 

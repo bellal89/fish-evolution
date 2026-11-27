@@ -7,10 +7,10 @@ const loop = new SimLoop(Date.now(), m => postMessage(m));
 
 self.onmessage = (e: MessageEvent<ToWorker>) => loop.handle(e.data);
 
-function tick(): void {
+function runFrame(): void {
   const start = performance.now();
   loop.frame(start);
   const spent = performance.now() - start;
-  setTimeout(tick, Math.max(0, CONFIG.WORKER_TIMER_MS - spent));
+  setTimeout(runFrame, Math.max(0, CONFIG.WORKER_TIMER_MS - spent));
 }
-tick();
+runFrame();
