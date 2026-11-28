@@ -20,7 +20,7 @@ export function mountArena(root: HTMLElement, send: (m: ToWorker) => void): { up
       <button data-act="new" title="New food, fish positions and random brains">New start</button>
       ${SPEEDS.map(s => `<button data-speed>${s === 0 ? '⏸' : `x${s}`}</button>`).join('')}
       <label title="Fish per side. A change starts both sides again from the same start">fish <input type="number" min="1" max="150" value="${CONFIG.ARENA_FISH}"></label>
-      <label title="Predators per side. A change starts both sides again from the same start">predators <input type="number" min="0" max="10" value="1"></label>
+      <label title="Predators per side. A change starts both sides again from the same start">predators <input type="number" min="0" max="10" value="${CONFIG.ARENA_PREDATORS}"></label>
     </div>
     <div class="halves"></div>`;
   root.querySelector<HTMLButtonElement>('[data-act="same"]')!.onclick = () => send({ type: 'arenaRestart' });

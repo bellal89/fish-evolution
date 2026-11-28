@@ -192,6 +192,8 @@ export const CONFIG = {
   INITIAL_FISH: 150,
   /** Fish per arena side at first; the user can change it. */
   ARENA_FISH: 5,
+  /** Predators per arena side at first; the user can change it. */
+  ARENA_PREDATORS: 1,
   /** Energy each initial fish starts with. */
   INITIAL_FISH_ENERGY: 80,
   /** All nutrients in the tank. */

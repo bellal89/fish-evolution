@@ -15,7 +15,7 @@ export class Arena {
   speed: ArenaSpeed = 1;
   /** Fish per side. */
   count: number = CONFIG.ARENA_FISH;
-  predators = 1;
+  predators: number = CONFIG.ARENA_PREDATORS;
   worlds!: [World, World];
   private brains!: [Brain, Brain];
   private selected: [number | null, number | null] = [null, null];
@@ -54,13 +54,13 @@ export class Arena {
     for (const w of this.worlds) w.step();
   }
 
-  view(): { speed: ArenaSpeed; count: number; predators: number; choices: [BrainChoice, BrainChoice]; sides: [ArenaSideView, ArenaSideView] } {
+  view(): { speed: ArenaSpeed; count: number; choices: [BrainChoice, BrainChoice]; sides: [ArenaSideView, ArenaSideView] } {
     const side = (s: Side): ArenaSideView => {
       const w = this.worlds[s];
       const id = this.selected[s];
       const shown = w.fish.some(f => f.id === id) ? id : (w.fish[0]?.id ?? null);
       return { scene: makeSnapshot(w, shown), foodEaten: w.events.foodEaten, genome: this.brains[s].genome };
     };
-    return { speed: this.speed, count: this.count, predators: this.predators, choices: [this.picks[0].choice, this.picks[1].choice], sides: [side(0), side(1)] };
+    return { speed: this.speed, count: this.count, choices: [this.picks[0].choice, this.picks[1].choice], sides: [side(0), side(1)] };
   }
 }

@@ -38,8 +38,7 @@ export function mountInspector(root: HTMLElement): Inspector {
         <div class="swatches"></div>
         <div id="fish-genes"></div>
       </div>
-    </div>
-`;
+    </div>`;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
   const fishButton = tabs[1];
   const fishTab = root.querySelector<HTMLElement>('#tab-fish')!;
@@ -87,7 +86,7 @@ export function mountInspector(root: HTMLElement): Inspector {
       wanted = id;
       seen = false;
       fishButton.hidden = id === null;
-      open(tabs[id === null ? 0 : 1]);
+      open(id === null ? tabs[0] : fishButton);
     },
     update(snap) {
       const sel = snap.selected;

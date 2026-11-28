@@ -97,7 +97,6 @@ export interface ArenaSnapshot {
   speed: ArenaSpeed;
   /** Fish per side at the start. */
   count: number;
-  predators: number;
   choices: [BrainChoice, BrainChoice];
   sides: [ArenaSideView, ArenaSideView];
   /** Oldest first. */
