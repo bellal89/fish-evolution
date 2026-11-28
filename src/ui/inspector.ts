@@ -1,4 +1,6 @@
 import type { Snapshot } from '../protocol';
+import { genomeSize } from '../neat/genome';
+import { maxEnergy } from '../sim/fish';
 import { expressedColor } from '../sim/traits';
 import { drawBrain } from './brainView';
 import { makeCanvas, secs } from './charts';
@@ -6,7 +8,7 @@ import { drawFishIcon } from './render';
 
 interface Inspector {
   update(snap: Snapshot): void;
-  /** Tell the inspector which fish the UI asked for (null = none). Clears "Fish died". */
+  /** Tell the inspector which fish the UI asked for (null = none). A fish opens the Fish tab; none removes it. */
   setWanted(id: number | null): void;
 }
 
@@ -21,9 +23,14 @@ function legend(nodes: string): HTMLElement {
 
 export function mountInspector(root: HTMLElement): Inspector {
   root.innerHTML = `
-    <div class="tabs"><button data-tab="fish" class="active">Fish</button><button data-tab="leader">Leader brain</button></div>
-    <div id="tab-fish">
-      <div id="fish-msg" class="msg">Click a fish to inspect it</div>
+    <div class="tabs"><button data-tab="stats" class="active">Stats</button><button data-tab="fish" hidden>Fish</button></div>
+    <div id="tab-stats">
+      <div class="section">Leader brain</div>
+      <div id="leader-info" class="msg">No leader yet</div>
+      <div id="charts"></div>
+    </div>
+    <div id="tab-fish" hidden>
+      <div id="fish-msg" class="msg"></div>
       <div id="fish-body" hidden>
         <div id="fish-info"></div>
         <div id="fish-waste"></div>
@@ -32,12 +39,11 @@ export function mountInspector(root: HTMLElement): Inspector {
         <div id="fish-genes"></div>
       </div>
     </div>
-    <div id="tab-leader" hidden>
-      <div id="leader-info" class="msg">No leader yet</div>
-    </div>`;
+`;
   const tabs = [...root.querySelectorAll<HTMLButtonElement>('[data-tab]')];
+  const fishButton = tabs[1];
   const fishTab = root.querySelector<HTMLElement>('#tab-fish')!;
-  const leaderTab = root.querySelector<HTMLElement>('#tab-leader')!;
+  const statsTab = root.querySelector<HTMLElement>('#tab-stats')!;
   const msg = root.querySelector<HTMLElement>('#fish-msg')!;
   const body = root.querySelector<HTMLElement>('#fish-body')!;
   const info = root.querySelector<HTMLElement>('#fish-info')!;
@@ -54,7 +60,7 @@ export function mountInspector(root: HTMLElement): Inspector {
   ));
   const leaderBrain = makeCanvas(420, 340);
   leaderBrain.className = 'brain';
-  leaderTab.append(leaderBrain, legend('no live values, the leader may be dead'));
+  leaderInfo.after(leaderBrain, legend('no live values, the leader may be dead'));
 
   const swatchCanvases = [0, 1].map(() => {
     const c = makeCanvas(56, 28);
@@ -65,13 +71,12 @@ export function mountInspector(root: HTMLElement): Inspector {
     return { c, label, cell };
   });
 
-  tabs.forEach(b => {
-    b.onclick = () => {
-      tabs.forEach(t => t.classList.toggle('active', t === b));
-      fishTab.hidden = b.dataset.tab !== 'fish';
-      leaderTab.hidden = b.dataset.tab !== 'leader';
-    };
-  });
+  function open(b: HTMLButtonElement): void {
+    tabs.forEach(t => t.classList.toggle('active', t === b));
+    fishTab.hidden = b !== fishButton;
+    statsTab.hidden = b === fishButton;
+  }
+  tabs.forEach(b => (b.onclick = () => open(b)));
 
   let wanted: number | null = null;
   /** The wanted fish has appeared in a snapshot, so its absence means it died. */
@@ -81,6 +86,8 @@ export function mountInspector(root: HTMLElement): Inspector {
     setWanted(id) {
       wanted = id;
       seen = false;
+      fishButton.hidden = id === null;
+      open(tabs[id === null ? 0 : 1]);
     },
     update(snap) {
       const sel = snap.selected;
@@ -89,7 +96,7 @@ export function mountInspector(root: HTMLElement): Inspector {
 
       body.hidden = !show;
       msg.hidden = show;
-      msg.textContent = seen ? 'Fish died' : 'Click a fish to inspect it';
+      msg.textContent = seen ? 'Fish died' : '';
 
       if (show && sel && !fishTab.hidden) {
         const t = sel.traits;
@@ -97,7 +104,7 @@ export function mountInspector(root: HTMLElement): Inspector {
           `${sel.sex === 'M' ? '♂ male' : '♀ female'} · age ${secs(sel.age)} · ` +
           `energy ${sel.energy.toFixed(0)} · children ${sel.children}`;
         wasteInfo.textContent = `aged by waste: ${secs(sel.wasteAge)}`;
-        fill.style.width = `${Math.min(100, (sel.energy / (t.mateThreshold * 1.5)) * 100)}%`;
+        fill.style.width = `${Math.min(100, (sel.energy / maxEnergy(t)) * 100)}%`;
         const shown = expressedColor(t, sel.sex);
         [t.colorM, t.colorF].forEach((c, i) => {
           const s = swatchCanvases[i];
@@ -113,9 +120,10 @@ export function mountInspector(root: HTMLElement): Inspector {
         drawBrain(fishBrain.getContext('2d')!, sel.genome, sel.activations);
       }
 
-      if (!leaderTab.hidden) {
+      if (!statsTab.hidden) {
         if (snap.leader) {
-          leaderInfo.textContent = `Living descendants: ${snap.leader.living}`;
+          const { hidden, enabledConns } = genomeSize(snap.leader.genome);
+          leaderInfo.textContent = `${snap.leader.living} descendants · ${hidden} hidden · ${enabledConns} links`;
           drawBrain(leaderBrain.getContext('2d')!, snap.leader.genome);
         } else {
           leaderInfo.textContent = 'No leader yet';

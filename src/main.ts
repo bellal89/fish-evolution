@@ -11,7 +11,7 @@ import { fitView, screenToWorld, type View } from './ui/view';
 const app = document.getElementById('app')!;
 app.innerHTML = `
   <canvas id="tank"></canvas><div id="bar"></div>
-  <aside id="side"><div id="inspector"></div><div id="charts"></div></aside>
+  <aside id="side"><div id="inspector"></div></aside>
   <div id="arena" hidden></div>`;
 const canvas = document.getElementById('tank') as HTMLCanvasElement;
 const side = document.getElementById('side')!;

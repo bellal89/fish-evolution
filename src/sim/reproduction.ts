@@ -5,7 +5,7 @@ import { CONFIG } from './config';
 import { isMature, type Fish } from './fish';
 import { clamp } from './geom';
 import type { Rng } from './rng';
-import { accepts, crossTraits, expressedColor, mutateTraits, type Sex, type Traits } from './traits';
+import { accepts, crossTraits, mutateTraits, type Sex, type Traits } from './traits';
 
 export interface Egg {
   id: number;
@@ -26,7 +26,7 @@ function wants(chooser: Fish, other: Fish): boolean {
     chooser.mateCooldown === 0 &&
     chooser.energy >= chooser.traits.mateThreshold &&
     chooser.lastOutputs[2] > 0 &&
-    accepts(chooser.traits, expressedColor(other.traits, other.sex))
+    accepts(chooser.traits, other.traits, other.sex)
   );
 }
 

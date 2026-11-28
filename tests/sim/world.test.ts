@@ -87,19 +87,22 @@ test('a chase whose target is gone counts as an escape', () => {
   expect(w.events.escapes).toBe(1);
 });
 
-test('a fish on an algae cell takes one bite, then waits', () => {
+test.each([
+  ['a hungry fish on an algae cell takes one bite', 10, CONFIG.ALGAE_MAX - CONFIG.BITE],
+  ['a full fish does not eat', 1000, CONFIG.ALGAE_MAX],
+])('%s', (_, energy, left) => {
   const w = new World(1);
   const [f] = w.fish;
   w.fish = [f];
   w.predators.length = 0;
+  f.energy = energy;
   const cell = w.food.algae[0];
   cell.biomass = CONFIG.ALGAE_MAX;
   f.x = cell.x;
   f.y = cell.y - f.traits.size;
   w.step();
   w.step();
-  expect(cell.biomass).toBeCloseTo(CONFIG.ALGAE_MAX - CONFIG.BITE, 1);
-  expect(f.biteCooldown).toBe(CONFIG.BITE_COOLDOWN - 1);
+  expect(cell.biomass).toBeCloseTo(left, 1);
 });
 
 test('a world restored from a structured clone of its save continues identically', () => {

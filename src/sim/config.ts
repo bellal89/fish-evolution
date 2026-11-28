@@ -46,6 +46,8 @@ export const CONFIG = {
   P_PATTERN_MUT: 0.03,
   /** A chooser with choosiness 1 demands this attraction. */
   CHOOSY_MAX: 0.5,
+  /** A female finds the smallest male this fraction less attractive than the largest. */
+  SIZE_APPEAL: 0.4,
   /** Visibility floor: even perfect camouflage is not invisible. */
   MIN_VISIBILITY: 0.25,
   /** Visibility weights: hue contrast and brightness contrast with the background. */
@@ -102,7 +104,7 @@ export const CONFIG = {
   /** A dead fish's body sinks this fast, px/tick (3 times the waste). */
   BODY_SINK_SPEED: 1.5,
   /** A body rests this far below the floor line, as a fraction of its size. */
-  BODY_REST_DEPTH: 0.5,
+  BODY_REST_DEPTH: 1.5,
   /** Ticks a body lies on the bottom while it dissolves into the field (10 s). */
   BODY_DISSOLVE_TICKS: 600,
 
@@ -128,6 +130,11 @@ export const CONFIG = {
   SENSE_FOOD_RADIUS: 6,
 
   // Fish
+  /**
+   * Most energy a fish can hold, per squared unit of size. A full fish does not eat.
+   * The cost grows with size and the store with its square, so a big fish lasts longer without food.
+   */
+  ENERGY_CAP_PER_SIZE2: 1.2,
   /** Energy per tick per unit of size, just for being alive. */
   BASE_COST: 0.0008,
   /** Energy per tick per unit of size and squared speed. */
@@ -143,7 +150,7 @@ export const CONFIG = {
   /** Age in ticks at which a fish can mate. */
   MATURITY_TICKS: 600,
   /** Extra age per tick while a fish touches waste (N). */
-  WASTE_AGE_TICKS: 0.5,
+  WASTE_AGE_TICKS: 0.7,
   /** A dead body ages a fish this many times faster than waste (K). */
   BODY_AGE_MULT: 3,
 
@@ -183,7 +190,7 @@ export const CONFIG = {
 
   // World
   INITIAL_FISH: 150,
-  /** Fish per arena side. */
+  /** Fish per arena side at first; the user can change it. */
   ARENA_FISH: 5,
   /** Energy each initial fish starts with. */
   INITIAL_FISH_ENERGY: 80,

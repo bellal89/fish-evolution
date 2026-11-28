@@ -57,22 +57,8 @@ const ROWS: Row[] = [
   one('Offspring per fish', p => p.avgChildren, '#e0b0ff'),
   one('Size', p => p.avgSize, '#9ad'),
   one('Speed', p => p.avgSpeed, '#fc8'),
-  {
-    title: 'Hidden neurons',
-    lines: [
-      { name: 'avg', get: p => p.avgHidden, color: '#9ad' },
-      { name: 'leader', get: p => p.leaderHidden, color: '#fc6' },
-    ],
-    fmt: f1,
-  },
-  {
-    title: 'Connections',
-    lines: [
-      { name: 'avg', get: p => p.avgConns, color: '#9ad' },
-      { name: 'leader', get: p => p.leaderConns, color: '#fc6' },
-    ],
-    fmt: f1,
-  },
+  one('Hidden neurons', p => p.avgHidden, '#9ad'),
+  one('Connections', p => p.avgConns, '#9ad'),
   one('Escapes', p => p.escapeRate, '#f88', pct),
   one('Food per fish', p => p.foodPerFish, '#8d8', v => v.toFixed(2)),
   one('Matings per fish', p => p.matingsPerFish, '#f9c', v => v.toFixed(2)),

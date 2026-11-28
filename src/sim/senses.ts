@@ -157,7 +157,7 @@ export function sense(f: SensingFish, ctx: SenseContext, out: Float32Array): voi
     const d = castAt(f, CH_FISH, o.x, o.y, o.traits.size, range);
     if (d < mateDist && o.sex !== f.sex) {
       mateDist = d;
-      mateAppeal = attraction(f.traits, color);
+      mateAppeal = attraction(f.traits, o.traits, o.sex);
     }
   }
   for (const p of ctx.predators) {

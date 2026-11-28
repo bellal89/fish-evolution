@@ -78,6 +78,11 @@ export class SimLoop {
       case 'arenaBrain': this.arena!.setPick(msg.side, this.pick(msg.choice)); break;
       case 'arenaRestart': this.arena!.restart(msg.seed); break;
       case 'arenaSpeed': this.arena!.speed = msg.speed; break;
+      case 'arenaCount':
+        this.arena!.count = msg.count;
+        this.arena!.predators = msg.predators;
+        this.arena!.restart();
+        break;
       case 'arenaSelect': this.arena!.select(msg.side, msg.id); break;
     }
   }

@@ -56,6 +56,8 @@ export function createFish(
   return f;
 }
 
+export const maxEnergy = (t: Traits): number => CONFIG.ENERGY_CAP_PER_SIZE2 * t.size ** 2;
+
 /** Energy spent this tick: upkeep, movement and brain. */
 export function tickCost(f: Fish): number {
   const { size } = f.traits;

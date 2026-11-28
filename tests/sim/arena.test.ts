@@ -6,7 +6,7 @@ import { INPUT_COUNT } from '../../src/sim/senses';
 import { SCALAR_KEYS, randomTraits } from '../../src/sim/traits';
 import { World } from '../../src/sim/world';
 
-const setup = (b: Brain): Brain => ({ genome: b.genome, traits: arenaTraits(b.traits) });
+const setup = (b: Brain, count = CONFIG.ARENA_FISH) => ({ genome: b.genome, traits: arenaTraits(b.traits), count, predators: 1 });
 const state = (w: World) =>
   JSON.stringify(w.save(), (_, v) => (ArrayBuffer.isView(v) ? Array.from(v as Float64Array) : v instanceof Map ? [...v] : v));
 

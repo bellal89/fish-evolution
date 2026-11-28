@@ -20,8 +20,6 @@ export interface StatPoint {
   avgSpeed: number;
   avgHidden: number;
   avgConns: number;
-  leaderHidden: number;
-  leaderConns: number;
   escapeRate: number;
   foodPerFish: number;
   matingsPerFish: number;
@@ -56,8 +54,6 @@ export class Stats {
     const males = fish.filter(f => f.sex === 'M');
     const females = fish.filter(f => f.sex === 'F');
     const sizes = fish.map(f => genomeSize(f.genome));
-    const lead = w.lineage.leader();
-    const leadSize = lead ? genomeSize(lead.genome) : null;
     const e = w.events;
     const n = fish.length;
     const hue = (fs: typeof fish) => fs.map(f => expressedColor(f.traits, f.sex).hue);
@@ -79,8 +75,6 @@ export class Stats {
       avgSpeed: mean(fish.map(f => f.traits.maxSpeed)),
       avgHidden: mean(sizes.map(s => s.hidden)),
       avgConns: mean(sizes.map(s => s.enabledConns)),
-      leaderHidden: leadSize?.hidden ?? 0,
-      leaderConns: leadSize?.enabledConns ?? 0,
       escapeRate: e.attacks > 0 ? e.escapes / e.attacks : 0,
       foodPerFish: n > 0 ? e.foodEaten / n : 0,
       matingsPerFish: n > 0 ? e.matings / n : 0,
