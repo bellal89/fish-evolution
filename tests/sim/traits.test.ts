@@ -74,12 +74,25 @@ test('crossTraits takes every field from one parent', () => {
   expect(sizes).toEqual(new Set([a.size, b.size]));
 });
 
+/** A female with these colors, so that only color counts. */
+const female = (c: ColorGenes) => ({ ...randomTraits(new Rng(3)), colorF: c });
+
 test('attraction weighs hue, pattern and brightness', () => {
   const t = { ...randomTraits(new Rng(2)), prefHue: 0.3, prefPattern: 'stripes' as const };
   const c: ColorGenes = { hue: 0.3, brightness: 1, pattern: 'stripes', patternCount: 3, hue2: 0 };
-  expect(attraction(t, c)).toBeCloseTo(1);
-  expect(attraction(t, { ...c, pattern: 'solid' })).toBeCloseTo(0.6);
-  expect(attraction(t, { ...c, brightness: 0 })).toBeCloseTo(0.5);
+  expect(attraction(t, female(c), 'F')).toBeCloseTo(1);
+  expect(attraction(t, female({ ...c, pattern: 'solid' }), 'F')).toBeCloseTo(0.6);
+  expect(attraction(t, female({ ...c, brightness: 0 }), 'F')).toBeCloseTo(0.5);
+});
+
+test('a male is less attractive the smaller he is; a female size does not count', () => {
+  const t = { ...randomTraits(new Rng(2)), prefHue: 0.3, prefPattern: 'stripes' as const };
+  const c: ColorGenes = { hue: 0.3, brightness: 1, pattern: 'stripes', patternCount: 3, hue2: 0 };
+  const [lo, hi] = CONFIG.TRAIT_RANGES.size;
+  const male = (size: number) => ({ ...randomTraits(new Rng(3)), colorM: c, size });
+  expect(attraction(t, male(hi), 'M')).toBeCloseTo(1);
+  expect(attraction(t, male(lo), 'M')).toBeCloseTo(1 - CONFIG.SIZE_APPEAL);
+  expect(attraction(t, { ...female(c), size: lo }, 'F')).toBeCloseTo(1);
 });
 
 const match: ColorGenes = { hue: 0.3, brightness: 1, pattern: 'stripes', patternCount: 3, hue2: 0 };
@@ -90,7 +103,7 @@ test.each([
   ['non-choosy fish accepts the opposite', 0, opposite, true],
 ])('%s', (_, choosiness, color, ok) => {
   const t = { ...randomTraits(new Rng(2)), prefHue: 0.3, prefPattern: 'stripes' as const, choosiness };
-  expect(accepts(t, color)).toBe(ok);
+  expect(accepts(t, female(color), 'F')).toBe(ok);
 });
 
 test('camouflaged color is less visible', () => {

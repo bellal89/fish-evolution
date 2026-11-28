@@ -46,6 +46,8 @@ export const CONFIG = {
   P_PATTERN_MUT: 0.03,
   /** A chooser with choosiness 1 demands this attraction. */
   CHOOSY_MAX: 0.5,
+  /** A female finds the smallest male this fraction less attractive than the largest. */
+  SIZE_APPEAL: 0.4,
   /** Visibility floor: even perfect camouflage is not invisible. */
   MIN_VISIBILITY: 0.25,
   /** Visibility weights: hue contrast and brightness contrast with the background. */
@@ -128,6 +130,11 @@ export const CONFIG = {
   SENSE_FOOD_RADIUS: 6,
 
   // Fish
+  /**
+   * Most energy a fish can hold, per squared unit of size. A full fish does not eat.
+   * The cost grows with size and the store with its square, so a big fish lasts longer without food.
+   */
+  ENERGY_CAP_PER_SIZE2: 1.2,
   /** Energy per tick per unit of size, just for being alive. */
   BASE_COST: 0.0008,
   /** Energy per tick per unit of size and squared speed. */

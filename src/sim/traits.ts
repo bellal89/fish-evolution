@@ -129,16 +129,19 @@ export function hueDist(a: number, b: number): number {
   return Math.min(d, 1 - d);
 }
 
-/** How much the chooser likes this color, 0..1. */
-export function attraction(chooser: Traits, c: ColorGenes): number {
+/** How much the chooser likes the other fish, 0..1: its color, and for a male also its size. */
+export function attraction(chooser: Traits, other: Traits, otherSex: Sex): number {
+  const c = expressedColor(other, otherSex);
   const match =
     0.6 * (1 - 2 * hueDist(c.hue, chooser.prefHue)) +
     0.4 * (c.pattern === chooser.prefPattern ? 1 : 0);
-  return match * (0.5 + 0.5 * c.brightness);
+  const [lo, hi] = CONFIG.TRAIT_RANGES.size;
+  const size = otherSex === 'M' ? 1 - (CONFIG.SIZE_APPEAL * (hi - other.size)) / (hi - lo) : 1;
+  return match * (0.5 + 0.5 * c.brightness) * size;
 }
 
-export function accepts(chooser: Traits, c: ColorGenes): boolean {
-  return attraction(chooser, c) >= chooser.choosiness * CONFIG.CHOOSY_MAX;
+export function accepts(chooser: Traits, other: Traits, otherSex: Sex): boolean {
+  return attraction(chooser, other, otherSex) >= chooser.choosiness * CONFIG.CHOOSY_MAX;
 }
 
 /** How easily a predator or a fish sees this color against the background, MIN_VISIBILITY..1. */

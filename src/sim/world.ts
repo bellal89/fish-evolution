@@ -2,7 +2,7 @@ import { InnovationTracker, createMinimalGenome } from '../neat/genome';
 import type { Brain } from './arena';
 import { CONFIG } from './config';
 import {
-  advanceAge, applyOutputs, createFish, excrete, isDead, payCost, updateReady, wasteHarm, type Fish,
+  advanceAge, applyOutputs, createFish, excrete, isDead, maxEnergy, payCost, updateReady, wasteHarm, type Fish,
 } from './fish';
 import { FoodSystem, type AlgaeCell, type Dirt, type Plankton } from './food';
 import { Lineage, type LeaderEntry } from './lineage';
@@ -217,6 +217,7 @@ export class World {
   }
 
   private eat(f: Fish): void {
+    if (f.energy >= maxEnergy(f.traits)) return;
     let got = 0;
     for (const it of this.foodGrid.query(f.x, f.y, f.traits.size + CONFIG.EAT_REACH)) {
       if (it.kind === 'algae') {

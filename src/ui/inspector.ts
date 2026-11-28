@@ -1,5 +1,6 @@
 import type { Snapshot } from '../protocol';
 import { genomeSize } from '../neat/genome';
+import { maxEnergy } from '../sim/fish';
 import { expressedColor } from '../sim/traits';
 import { drawBrain } from './brainView';
 import { makeCanvas, secs } from './charts';
@@ -103,7 +104,7 @@ export function mountInspector(root: HTMLElement): Inspector {
           `${sel.sex === 'M' ? '♂ male' : '♀ female'} · age ${secs(sel.age)} · ` +
           `energy ${sel.energy.toFixed(0)} · children ${sel.children}`;
         wasteInfo.textContent = `aged by waste: ${secs(sel.wasteAge)}`;
-        fill.style.width = `${Math.min(100, (sel.energy / (t.mateThreshold * 1.5)) * 100)}%`;
+        fill.style.width = `${Math.min(100, (sel.energy / maxEnergy(t)) * 100)}%`;
         const shown = expressedColor(t, sel.sex);
         [t.colorM, t.colorF].forEach((c, i) => {
           const s = swatchCanvases[i];
