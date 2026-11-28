@@ -28,12 +28,12 @@ npx tsx scripts/headless.ts [seed] [ticks]
 - **Avg lifespan**: average age of the fish that died between samples.
 - **Offspring per fish**: average children of living fish.
 - **Size**, **Speed**: average body genes.
-- **Hidden neurons**, **Connections**: brain size, the population average and the leader (the ancestor with the most living descendants).
+- **Hidden neurons**, **Connections**: average brain size.
 - **Escapes**: share of predator chases that ended without a kill.
 - **Food per fish**: food eaten per fish between samples.
 - **Matings per fish**: matings per fish between samples.
 - **Most common male hue**, **Most common female hue**, **Top pattern**: the most common expressed hue (in 15° steps) over time and the most common pattern now, per sex.
-- **Stats** tab: the leader's brain with its living descendants, hidden neurons and links, then the charts.
+- **Stats** tab: the brain of the leader (the ancestor with the most living descendants) with its living descendants, hidden neurons and links, then the charts.
 - **Fish** tab (click a fish; it opens by itself): sex, age, energy, children, how much waste aged it, both color variants, body and mating genes, and its brain with live activations. Click the empty water or press Esc to close it.
 
 ## Brain arena
